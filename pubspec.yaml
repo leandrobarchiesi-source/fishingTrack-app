@@ -1,0 +1,61 @@
+name: FishingTrack
+description: "Track your fishing Sessions"
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.6.0-334.2.beta
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+
+  flutter_riverpod: ^2.4.9
+
+  drift: ^2.14.1
+  sqlite3_flutter_libs: ^0.5.18
+  path_provider: ^2.1.1
+  connectivity_plus: ^6.0.5
+
+  uuid: ^4.2.1
+
+  supabase_flutter: ^2.8.0
+
+  geolocator: ^12.0.0
+  geocoding: ^3.0.0
+
+  url_launcher: ^6.3.0
+
+  http: ^1.2.0
+
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  flutter_map_dragmarker: ^7.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  flutter_lints: ^3.0.1
+
+  drift_dev: ^2.14.1
+
+  build_runner: ^2.4.7
+
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  image_path: "assets/favicon.png"
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/logo.png
+    - assets/favicon.png
+    - assets/splash_logo.png
