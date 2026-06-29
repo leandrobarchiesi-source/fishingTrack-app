@@ -7,6 +7,7 @@ import '../../../database/app_database.dart';
 import '../../../services/connectivity_service.dart';
 import 'package:drift/drift.dart' show Value;
 import '../../../core/t.dart';
+import '../../../repository/spot_repository.dart';
 
 class SpotsPage extends StatefulWidget {
   const SpotsPage({super.key});
@@ -16,7 +17,8 @@ class SpotsPage extends StatefulWidget {
 }
 
 class _SpotsPageState extends State<SpotsPage> {
-  final database = AppDatabase();
+final database = AppDatabase();
+late final SpotRepository repository = SpotRepository(database);
 
   List<Spot> spots = [];
 
@@ -37,8 +39,7 @@ class _SpotsPageState extends State<SpotsPage> {
   }
 
   Future<void> carica() async {
-    final data = await database.getAllSpots();
-
+final data = await repository.getAllSpots();
     if (!mounted) return;
 
     setState(() {
@@ -51,13 +52,12 @@ class _SpotsPageState extends State<SpotsPage> {
       return;
     }
 
-    await database.updateSpot(
-      id: selectedSpot!.id,
-      nome: modificaController.text,
-      latitudine: posizioneModificata!.latitude,
-      longitudine: posizioneModificata!.longitude,
-    );
-
+    await repository.updateSpot(
+  id: selectedSpot!.id,
+  nome: modificaController.text,
+  latitudine: posizioneModificata!.latitude,
+  longitudine: posizioneModificata!.longitude,
+);
 // SYNC IMMEDIATA
 
     await database.syncPendingSpots();
@@ -102,7 +102,7 @@ class _SpotsPageState extends State<SpotsPage> {
       return;
     }
 
-    await database.deleteSpot(
+    await repository.deleteSpot(
       selectedSpot!.id,
     );
 

@@ -89,11 +89,7 @@ class _HomePageState extends State<HomePage> {
     connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       (result) async {
         if (result != ConnectivityResult.none) {
-          print(
-            "TORNATO ONLINE",
-          );
 
-          await sincronizza();
         }
       },
     );
@@ -125,11 +121,6 @@ class _HomePageState extends State<HomePage> {
         await profileService.creaProfiloSeManca();
         await profileService.caricaLingua();
 
-        await sincronizza().timeout(
-          const Duration(
-            seconds: 2,
-          ),
-        );
 
         spotCount = await database.getSpotCount();
       }
@@ -373,6 +364,15 @@ class _HomePageState extends State<HomePage> {
                   fontWeight: FontWeight.bold,
                 ),
               ),
+              const SizedBox(height: 20),
+SizedBox(
+  width: double.infinity,
+  child: ElevatedButton.icon(
+    onPressed: sincronizza,
+    icon: const Icon(Icons.sync),
+    label: const Text("Sincronizza"),
+  ),
+),
               const SizedBox(
                 height: 15,
               ),

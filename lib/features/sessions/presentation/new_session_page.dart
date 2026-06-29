@@ -12,6 +12,7 @@ import '../../map/presentation/map_picker_page.dart';
 import '../../../services/connectivity_service.dart';
 import '../../spots/presentation/spot_selection_page.dart';
 import '../../../core/t.dart';
+import '../../../services/profile_service.dart';
 
 const uuid = Uuid();
 
@@ -499,8 +500,8 @@ class _NewSessionPageState extends State<NewSessionPage> {
 
       if (!mounted) return;
 
-      await widget.database.syncPendingSpots();
-      await widget.database.syncPendingSessions();
+     // await widget.database.syncPendingSpots();
+     // await widget.database.syncPendingSessions();
 
       Navigator.pop(
         context,
