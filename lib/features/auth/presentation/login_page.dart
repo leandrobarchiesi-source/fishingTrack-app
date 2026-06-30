@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../main.dart';
-import '../../../services/auth_service.dart';
+import '../../../core/auth/auth_service.dart';
 
 import 'register_page.dart';
 

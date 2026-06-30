@@ -1,5 +1,5 @@
-import '../database/app_database.dart';
-import 'supabase_service.dart';
+import '../../database/app_database.dart';
+import '../../services/supabase_service.dart';
 
 class SyncService {
   final AppDatabase database;

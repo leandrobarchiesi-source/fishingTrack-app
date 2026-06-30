@@ -6,14 +6,14 @@ import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
 import '../../../database/app_database.dart';
-import '../../../services/weather_service.dart';
+import '../../../core/wheater/weather_service.dart';
 import '../../../services/moon_service.dart';
 import '../../map/presentation/map_picker_page.dart';
 import '../../../services/connectivity_service.dart';
 import '../../spots/presentation/spot_selection_page.dart';
 import '../../../core/t.dart';
 import '../../../services/profile_service.dart';
-import '../../../services/gps_service.dart';
+import '../../../core/gps/gps_service.dart';
 
 const uuid = Uuid();
 
@@ -39,8 +39,7 @@ class _NewSessionPageState extends State<NewSessionPage> {
   final weatherService = WeatherService();
 
   final moonService = MoonService();
-  final gpsService = GpsService();
-
+  final gpsService = GpsService.instance;
   String tipoPescata = 'Libera';
 
   DateTime data = DateTime.now();

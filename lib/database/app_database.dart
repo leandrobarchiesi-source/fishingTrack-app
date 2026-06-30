@@ -5,7 +5,7 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../services/weather_service.dart';
+import '../core/wheater/weather_service.dart';
 
 import 'tables/fishing_sessions.dart';
 import 'tables/spots.dart';
