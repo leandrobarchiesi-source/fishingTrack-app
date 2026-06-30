@@ -15,6 +15,7 @@ import 'dart:async';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/t.dart';
 import 'core/restart_widget.dart';
+import 'features/auth/presentation/splash_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -53,14 +54,11 @@ class FishingApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final session = Supabase.instance.client.auth.currentSession;
-
     return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'FishingTrack',
-      home: session != null ? const HomePage() : const LoginPage(),
-    );
-  }
+  debugShowCheckedModeBanner: false,
+  title: 'FishingTrack',
+  home: const SplashPage(),
+);  }
 }
 
 class HomePage extends StatefulWidget {

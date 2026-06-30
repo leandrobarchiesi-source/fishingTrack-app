@@ -427,20 +427,7 @@ class _NewSessionPageState extends State<NewSessionPage> {
             ),
           );
 
-          await Supabase.instance.client
-              .from(
-            'spots',
-          )
-              .insert({
-            'id': nuovoId,
-            'user_id': Supabase.instance.client.auth.currentUser!.id,
-            'nome': luogoController.text.trim(),
-            'latitudine': latitudine,
-            'longitudine': longitudine,
-            'created_at': DateTime.now().toUtc().toIso8601String(),
-            'updated_at': DateTime.now().toUtc().toIso8601String(),
-          });
-
+          
           spotId = nuovoId;
         }
       }
