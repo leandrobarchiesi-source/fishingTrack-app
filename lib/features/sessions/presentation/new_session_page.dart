@@ -13,6 +13,7 @@ import '../../../services/connectivity_service.dart';
 import '../../spots/presentation/spot_selection_page.dart';
 import '../../../core/t.dart';
 import '../../../services/profile_service.dart';
+import '../../../services/gps_service.dart';
 
 const uuid = Uuid();
 
@@ -38,6 +39,7 @@ class _NewSessionPageState extends State<NewSessionPage> {
   final weatherService = WeatherService();
 
   final moonService = MoonService();
+  final gpsService = GpsService();
 
   String tipoPescata = 'Libera';
 
@@ -52,6 +54,10 @@ class _NewSessionPageState extends State<NewSessionPage> {
 
   double? latitudine;
   double? longitudine;
+  double? gpsAccuracy;
+  double? gpsSpeed;
+
+  bool acquiringGps = false;
 
   double? temperatura;
   double? temperaturaAcqua;
@@ -223,14 +229,20 @@ class _NewSessionPageState extends State<NewSessionPage> {
         return;
       }
 
-      final posizione = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+      final posizione = await gpsService.acquireBestPosition(
+        targetAccuracy: 5,
+        timeout: const Duration(seconds: 20),
+        onUpdate: (position) {
+          gpsAccuracy = position.accuracy;
+          gpsSpeed = position.speed;
+
+          if (mounted) {
+            setState(() {});
+          }
+        },
       );
-
       latitudine = posizione.latitude;
-
       longitudine = posizione.longitude;
-
       luogoController.text = "Posizione GPS";
 
       try {
@@ -427,7 +439,6 @@ class _NewSessionPageState extends State<NewSessionPage> {
             ),
           );
 
-          
           spotId = nuovoId;
         }
       }
@@ -487,8 +498,8 @@ class _NewSessionPageState extends State<NewSessionPage> {
 
       if (!mounted) return;
 
-     // await widget.database.syncPendingSpots();
-     // await widget.database.syncPendingSessions();
+      // await widget.database.syncPendingSpots();
+      // await widget.database.syncPendingSessions();
 
       Navigator.pop(
         context,
@@ -538,6 +549,16 @@ class _NewSessionPageState extends State<NewSessionPage> {
                 labelText: T.location,
               ),
             ),
+            if (gpsAccuracy != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Text(
+                  "📡 Precisione GPS: ${gpsAccuracy!.toStringAsFixed(1)} m",
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             const SizedBox(
               height: 16,
             ),
