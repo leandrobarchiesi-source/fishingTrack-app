@@ -55,6 +55,10 @@ class _NewSessionPageState extends State<NewSessionPage> {
   double? gpsAccuracy;
   double? gpsSpeed;
 
+  String? gpsSpotName;
+double? gpsSpotDistance;
+bool gpsSearching = false;
+
   bool acquiringGps = false;
 
   double? temperatura;
@@ -69,6 +73,7 @@ class _NewSessionPageState extends State<NewSessionPage> {
 
   String? selectedSpotId;
   String? selectedSpotNome;
+
 
   @override
   void initState() {
@@ -204,6 +209,13 @@ class _NewSessionPageState extends State<NewSessionPage> {
 
   Future<void> usaPosizioneAttuale() async {
     try {
+
+      setState(() {
+  gpsSearching = true;
+  gpsSpotName = null;
+  gpsSpotDistance = null;
+});
+
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
       if (!serviceEnabled) {
@@ -248,13 +260,54 @@ final result = await widget.database.findNearestSpot(
 );
 
 if (result.found) {
-  selectedSpotId = result.spot!.id;
-  luogoController.text = result.spot!.nome;
+  gpsSpotName = result.spot!.nome;
+  gpsSpotDistance = result.distance;
+
+  print(
+    "Spot: ${result.spot!.nome} - distanza: ${result.distance}",
+  );
+
+  const suggestDistance = 20.0;
+
+  if (result.distance! <= suggestDistance) {
+    final usaSpot = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: const Text("Spot già esistente"),
+        content: Text(
+          "È stato trovato lo spot\n\n"
+          "${result.spot!.nome}\n\n"
+          "Distanza: ${result.distance!.toStringAsFixed(1)} m\n\n"
+          "Vuoi utilizzare questo spot oppure crearne uno nuovo?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Crea nuovo"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Usa questo"),
+          ),
+        ],
+      ),
+    );
+
+    if (usaSpot == true) {
+      selectedSpotId = result.spot!.id;
+      luogoController.text = result.spot!.nome;
+    } else {
+      selectedSpotId = null;
+    }
+  } else {
+    selectedSpotId = null;
+  }
 } else {
   selectedSpotId = null;
-  luogoController.text = "Posizione GPS";
+  gpsSpotName = null;
+  gpsSpotDistance = null;
 }
-
 if (selectedSpotId == null) {
   try {
     final places = await placemarkFromCoordinates(
@@ -277,7 +330,9 @@ if (selectedSpotId == null) {
         // offline: ignora
       }
 
-      setState(() {});
+setState(() {
+  gpsSearching = false;
+});
     } catch (e) {
       if (!mounted) return;
 
@@ -559,17 +614,73 @@ if (spot != null) {
                 labelText: T.location,
               ),
             ),
-            if (gpsAccuracy != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Text(
-                  "📡 Precisione GPS: ${gpsAccuracy!.toStringAsFixed(1)} m",
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                  ),
+if (gpsAccuracy != null || gpsSearching)
+  Card(
+    margin: const EdgeInsets.only(bottom: 12),
+    child: Padding(
+      padding: const EdgeInsets.all(12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            "📡 GPS",
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          if (gpsSearching)
+            const Row(
+              children: [
+                SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2),
                 ),
+                SizedBox(width: 10),
+                Text("Ricerca posizione..."),
+              ],
+            ),
+
+          if (gpsAccuracy != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              "Precisione: ${gpsAccuracy!.toStringAsFixed(1)} m",
+            ),
+          ],
+
+          if (gpsSpotName != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              "📍 Spot: $gpsSpotName",
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
               ),
-            const SizedBox(
+            ),
+          ],
+
+          if (gpsSpotDistance != null)
+            Text(
+              "📏 Distanza: ${gpsSpotDistance!.toStringAsFixed(1)} m",
+            ),
+
+          if (!gpsSearching &&
+              gpsAccuracy != null &&
+              gpsSpotName == null)
+            const Padding(
+              padding: EdgeInsets.only(top: 8),
+              child: Text(
+                "⚠ Nessuno spot trovato entro 8 metri",
+              ),
+            ),
+        ],
+      ),
+    ),
+  ),
+              const SizedBox(
               height: 16,
             ),
             ElevatedButton.icon(

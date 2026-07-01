@@ -79,7 +79,7 @@ class AppDatabase extends _$AppDatabase {
 Future<NearbySpotResult> findNearestSpot({
   required double latitude,
   required double longitude,
-  double maxDistanceMeters = 8,
+  double maxDistanceMeters = 20,
 }) async {
     final allSpots = await getAllSpots();
 
