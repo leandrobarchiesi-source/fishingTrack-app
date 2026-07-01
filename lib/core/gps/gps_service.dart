@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:geolocator/geolocator.dart';
 
+import 'gps_fix.dart';
+
 class GpsService {
   GpsService._();
 
@@ -27,7 +29,7 @@ class GpsService {
     acquiring = false;
   }
 
-  Future<Position> acquireBestPosition({
+  Future<GpsFix> acquireBestPosition({
     double targetAccuracy = 5,
     Duration timeout = const Duration(seconds: 20),
     void Function(Position)? onUpdate,
@@ -39,7 +41,7 @@ class GpsService {
     bestPosition = null;
     bestAccuracy = null;
 
-    final completer = Completer<Position>();
+    final completer = Completer<GpsFix>();
 
     final start = DateTime.now();
 
@@ -50,7 +52,8 @@ class GpsService {
       ),
     ).listen(
       (position) async {
-        if (bestPosition == null || position.accuracy < bestAccuracy!) {
+        if (bestPosition == null ||
+            position.accuracy < bestAccuracy!) {
           bestPosition = position;
           bestAccuracy = position.accuracy;
         }
@@ -59,11 +62,19 @@ class GpsService {
 
         final elapsed = DateTime.now().difference(start);
 
-        if (bestAccuracy! <= targetAccuracy || elapsed >= timeout) {
+        if (bestAccuracy! <= targetAccuracy ||
+            elapsed >= timeout) {
           await stopAcquisition();
 
           if (!completer.isCompleted) {
-            completer.complete(bestPosition);
+            completer.complete(
+              GpsFix(
+                position: bestPosition!,
+                accuracy: bestAccuracy!,
+                acquisitionTime: elapsed,
+                timeoutReached: elapsed >= timeout,
+              ),
+            );
           }
         }
       },
@@ -76,12 +87,6 @@ class GpsService {
       },
     );
 
-    final result = await completer.future;
-
-    if (result == null) {
-      throw Exception("Posizione non disponibile");
-    }
-
-    return result;
+    return completer.future;
   }
 }

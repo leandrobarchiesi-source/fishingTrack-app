@@ -5,7 +5,6 @@ import 'package:latlong2/latlong.dart';
 
 import '../../../database/app_database.dart';
 import '../../../services/connectivity_service.dart';
-import 'package:drift/drift.dart' show Value;
 import '../../../core/t.dart';
 import '../../../repository/spot_repository.dart';
 

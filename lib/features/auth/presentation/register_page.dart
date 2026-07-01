@@ -129,7 +129,7 @@ class _RegisterPageState extends State<RegisterPage> {
               height: 20,
             ),
             DropdownButtonFormField(
-              value: lingua,
+              initialValue: lingua,
               items: const [
                 DropdownMenuItem(
                   value: "it",

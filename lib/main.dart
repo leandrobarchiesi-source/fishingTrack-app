@@ -54,10 +54,10 @@ class FishingApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
   debugShowCheckedModeBanner: false,
   title: 'FishingTrack',
-  home: const SplashPage(),
+  home: SplashPage(),
 );  }
 }
 

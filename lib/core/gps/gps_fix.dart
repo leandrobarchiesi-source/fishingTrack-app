@@ -15,4 +15,12 @@ class GpsFix {
     required this.acquisitionTime,
     required this.timeoutReached,
   });
+
+  double get latitude => position.latitude;
+
+  double get longitude => position.longitude;
+
+  double get altitude => position.altitude;
+
+  double get speed => position.speed;
 }

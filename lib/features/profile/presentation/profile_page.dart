@@ -273,7 +273,7 @@ class _ProfilePageState extends State<ProfilePage> {
             height: 15,
           ),
           DropdownButtonFormField<String>(
-            value: lingua,
+            initialValue: lingua,
             decoration: InputDecoration(
               labelText: T.language,
             ),

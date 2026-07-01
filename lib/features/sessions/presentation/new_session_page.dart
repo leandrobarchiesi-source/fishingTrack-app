@@ -228,8 +228,8 @@ class _NewSessionPageState extends State<NewSessionPage> {
         return;
       }
 
-      final posizione = await gpsService.acquireBestPosition(
-        targetAccuracy: 5,
+final gpsFix = await gpsService.acquireBestPosition(
+          targetAccuracy: 5,
         timeout: const Duration(seconds: 20),
         onUpdate: (position) {
           gpsAccuracy = position.accuracy;
@@ -240,8 +240,8 @@ class _NewSessionPageState extends State<NewSessionPage> {
           }
         },
       );
-      latitudine = posizione.latitude;
-      longitudine = posizione.longitude;
+latitudine = gpsFix.latitude;
+longitudine = gpsFix.longitude;
       luogoController.text = "Posizione GPS";
 
       try {
