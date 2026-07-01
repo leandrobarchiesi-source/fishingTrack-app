@@ -12,7 +12,6 @@ import '../../map/presentation/map_picker_page.dart';
 import '../../../services/connectivity_service.dart';
 import '../../spots/presentation/spot_selection_page.dart';
 import '../../../core/t.dart';
-import '../../../services/profile_service.dart';
 import '../../../core/gps/gps_service.dart';
 
 const uuid = Uuid();
@@ -242,23 +241,36 @@ final gpsFix = await gpsService.acquireBestPosition(
       );
 latitudine = gpsFix.latitude;
 longitudine = gpsFix.longitude;
-      luogoController.text = "Posizione GPS";
 
-      try {
-        final places = await placemarkFromCoordinates(
-          latitudine!,
-          longitudine!,
-        );
+final result = await widget.database.findNearestSpot(
+  latitude: latitudine!,
+  longitude: longitudine!,
+);
 
-        if (places.isNotEmpty) {
-          luogoController.text = places.first.locality ??
-              places.first.subAdministrativeArea ??
-              "Posizione trovata";
-        }
-      } catch (_) {
-        // offline: ignora
-      }
+if (result.found) {
+  selectedSpotId = result.spot!.id;
+  luogoController.text = result.spot!.nome;
+} else {
+  selectedSpotId = null;
+  luogoController.text = "Posizione GPS";
+}
 
+if (selectedSpotId == null) {
+  try {
+    final places = await placemarkFromCoordinates(
+      latitudine!,
+      longitudine!,
+    );
+
+    if (places.isNotEmpty) {
+      luogoController.text = places.first.locality ??
+          places.first.subAdministrativeArea ??
+          "Posizione trovata";
+    }
+  } catch (_) {
+    // offline: ignora
+  }
+}
       try {
         await aggiornaMeteo();
       } catch (_) {
@@ -335,9 +347,6 @@ longitudine = gpsFix.longitude;
             : p.subAdministrativeArea ?? "Spot";
       }
     } catch (e) {
-      print(
-        "Errore geocoding: $e",
-      );
 
       luogoController.text =
           "Spot ${latitudine!.toStringAsFixed(4)}, ${longitudine!.toStringAsFixed(4)}";
@@ -417,30 +426,29 @@ longitudine = gpsFix.longitude;
 
         spotId = selectedSpotId;
       } else {
-        final spot = await widget.database.getSpotByNome(
-          luogoController.text.trim(),
-        );
+final spot = await widget.database.getSpotByNome(
+  luogoController.text.trim(),
+);
 
-        if (spot != null) {
-          spotId = spot.id;
-        } else {
-          final nuovoId = uuid.v4();
+if (spot != null) {
+  spotId = spot.id;
+} else {
+  final nuovoId = uuid.v4();
 
-          await widget.database.insertSpot(
-            SpotsCompanion.insert(
-              id: nuovoId,
-              userId: Supabase.instance.client.auth.currentUser!.id,
-              nome: luogoController.text.trim(),
-              latitudine: Value(latitudine),
-              longitudine: Value(longitudine),
-              createdAt: DateTime.now().toUtc(),
-              updatedAt: DateTime.now().toUtc(),
-            ),
-          );
+  await widget.database.insertSpot(
+    SpotsCompanion.insert(
+      id: nuovoId,
+      userId: Supabase.instance.client.auth.currentUser!.id,
+      nome: luogoController.text.trim(),
+      latitudine: Value(latitudine),
+      longitudine: Value(longitudine),
+      createdAt: DateTime.now().toUtc(),
+      updatedAt: DateTime.now().toUtc(),
+    ),
+  );
 
-          spotId = nuovoId;
-        }
-      }
+  spotId = nuovoId;
+}
 
       final acqua = double.tryParse(
         temperaturaAcquaController.text.replaceAll(',', '.'),
@@ -504,7 +512,10 @@ longitudine = gpsFix.longitude;
         context,
         true,
       );
-    } catch (e) {
+    }
+    
+    }
+     catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(

@@ -6,9 +6,10 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/wheater/weather_service.dart';
-
+import 'package:geolocator/geolocator.dart';
 import 'tables/fishing_sessions.dart';
 import 'tables/spots.dart';
+import 'nearby_spot_result.dart';
 
 part 'app_database.g.dart';
 
@@ -74,6 +75,54 @@ class AppDatabase extends _$AppDatabase {
       spots,
     ).get();
   }
+
+Future<NearbySpotResult> findNearestSpot({
+  required double latitude,
+  required double longitude,
+  double maxDistanceMeters = 8,
+}) async {
+    final allSpots = await getAllSpots();
+
+  Spot? nearestSpot;
+  double nearestDistance = maxDistanceMeters;
+
+  for (final spot in allSpots) {
+    if (spot.latitudine == null || spot.longitudine == null) {
+      continue;
+    }
+
+    final distance = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      spot.latitudine!,
+      spot.longitudine!,
+    );
+print(
+  'Spot: ${spot.nome} - distanza: ${distance.toStringAsFixed(2)} m',
+);
+
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestSpot = spot;
+    }
+  }
+
+  if (nearestSpot != null) {
+  print(
+    'Scelto: ${nearestSpot.nome}',
+  );
+} else {
+  print(
+    'Nessuno spot trovato entro $maxDistanceMeters m',
+  );
+}
+
+return NearbySpotResult(
+  spot: nearestSpot,
+  distance: nearestSpot == null ? null : nearestDistance,
+);
+}
 
   Future<List<FishingSession>> getAllSessions() {
     return select(

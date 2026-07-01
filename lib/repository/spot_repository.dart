@@ -30,4 +30,7 @@ class SpotRepository {
   Future<void> deleteSpot(String id) {
     return database.deleteSpot(id);
   }
+
+
+  
 }
