@@ -46,35 +46,29 @@ final data = await repository.getAllSpots();
     });
   }
 
-  Future<void> salvaModificaSpot() async {
-    if (selectedSpot == null || posizioneModificata == null) {
-      return;
-    }
-
-    await repository.updateSpot(
-  id: selectedSpot!.id,
-  nome: modificaController.text,
-  latitudine: posizioneModificata!.latitude,
-  longitudine: posizioneModificata!.longitude,
-);
-// SYNC IMMEDIATA
-
-    await database.syncPendingSpots();
-
-    await database.syncSpotsFromSupabase();
-
-    await carica();
-
-    final nuovo = spots.firstWhere(
-      (s) => s.id == selectedSpot!.id,
-    );
-
-    setState(() {
-      selectedSpot = nuovo;
-
-      modificaSpot = false;
-    });
+Future<void> salvaModificaSpot() async {
+  if (selectedSpot == null || posizioneModificata == null) {
+    return;
   }
+
+  await repository.updateSpot(
+    id: selectedSpot!.id,
+    nome: modificaController.text,
+    latitudine: posizioneModificata!.latitude,
+    longitudine: posizioneModificata!.longitude,
+  );
+
+  await carica();
+
+  final nuovo = spots.firstWhere(
+    (s) => s.id == selectedSpot!.id,
+  );
+
+  setState(() {
+    selectedSpot = nuovo;
+    modificaSpot = false;
+  });
+}
 
   Future<void> eliminaSpot() async {
     if (selectedSpot == null) return;
@@ -141,19 +135,126 @@ final data = await repository.getAllSpots();
               itemBuilder: (_, index) {
                 final s = spots[index];
 
-                return Card(
-                  child: ListTile(
-                    leading: const Icon(
-                      Icons.place,
-                    ),
-                    title: Text(
-                      s.nome,
-                    ),
-                    subtitle: Text(
-                      "${s.latitudine?.toStringAsFixed(5)}, "
-                      "${s.longitudine?.toStringAsFixed(5)}",
-                    ),
+return Card(
+  child: ListTile(
+    leading: const Icon(
+      Icons.place,
+    ),
+    title: Text(
+      s.nome,
+    ),
+    subtitle: Text(
+      "${s.latitudine?.toStringAsFixed(5)}, "
+      "${s.longitudine?.toStringAsFixed(5)}",
+    ),
+onTap: () async {
+  selectedSpot = s;
+
+  modificaController.text = s.nome;
+
+  posizioneModificata = LatLng(
+    s.latitudine!,
+    s.longitudine!,
+  );
+
+  await showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    builder: (context) {
+      return SafeArea(
+            child: Padding(
+padding: EdgeInsets.fromLTRB(
+  20,
+  20,
+  20,
+  30 + MediaQuery.of(context).padding.bottom,
+),              child: SizedBox(
+               height: 320,
+                child: Column(
+                 crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                   Text(
+                "📍 Modifica spot",
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          
+
+              const SizedBox(height: 20),
+
+              TextField(
+                controller: modificaController,
+                decoration: const InputDecoration(
+                  labelText: "Nome",
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              Text(
+                "Lat: ${s.latitudine?.toStringAsFixed(5)}",
+              ),
+
+              Text(
+                "Lon: ${s.longitudine?.toStringAsFixed(5)}",
+              ),
+
+              const Spacer(),
+
+              ElevatedButton.icon(
+                icon: const Icon(Icons.save),
+                label: Text(T.save),
+                onPressed: () async {
+                  await repository.updateSpot(
+                    id: selectedSpot!.id,
+                    nome: modificaController.text.trim(),
+                    latitudine: selectedSpot!.latitudine!,
+                    longitudine: selectedSpot!.longitudine!,
+                  );
+
+                  Navigator.pop(context);
+
+                  await carica();
+
+                  if (mounted) {
+                    setState(() {});
+                  }
+                },
+              ),
+
+              const SizedBox(height: 10),
+
+              OutlinedButton.icon(
+                icon: const Icon(
+                  Icons.delete,
+                  color: Colors.red,
+                ),
+                label: Text(
+                  T.delete,
+                  style: const TextStyle(
+                    color: Colors.red,
                   ),
+                ),
+onPressed: () async {
+  await eliminaSpot();
+
+  if (mounted) {
+    Navigator.pop(context);
+  }
+},
+              ),
+              
+            ],
+          ),
+        ),
+            )
+      );
+    },
+  );
+},
+  ),
                 );
               },
             );
