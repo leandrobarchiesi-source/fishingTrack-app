@@ -436,107 +436,88 @@ setState(() {
 
     longitudine = spot['longitudine'];
 
-    await aggiornaMeteo();
-
-    setState(() {});
-  }
-
-  Future<void> saveSession() async {
-    if (luogoController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(T.enterLocation),
-        ),
-      );
-
-      return;
-    }
-
-    try {
-      setState(() {
-        loading = true;
-      });
-
-      final inizio = DateTime(
-        data.year,
-        data.month,
-        data.day,
-        oraInizio.hour,
-        oraInizio.minute,
-      );
-
-      final fine = DateTime(
-        data.year,
-        data.month,
-        data.day,
-        oraFine.hour,
-        oraFine.minute,
-      );
-
-      String? spotId;
-
-      if (selectedSpotId != null) {
-        // spot scelto dalla mappa:
-        // usa direttamente id e non creare nulla
-
-        spotId = selectedSpotId;
-      } else {
-final spot = await widget.database.getSpotByNome(
-  luogoController.text.trim(),
-);
-
-if (spot != null) {
-  spotId = spot.id;
-} else {
-  final nuovoId = uuid.v4();
-
-  await widget.database.insertSpot(
-    SpotsCompanion.insert(
-      id: nuovoId,
-      userId: Supabase.instance.client.auth.currentUser!.id,
-      nome: luogoController.text.trim(),
-      latitudine: Value(latitudine),
-      longitudine: Value(longitudine),
-      createdAt: DateTime.now().toUtc(),
-      updatedAt: DateTime.now().toUtc(),
-    ),
-  );
-
-  spotId = nuovoId;
+if (await ConnectivityService.isOnline()) {
+  await aggiornaMeteo();
 }
 
-      final acqua = double.tryParse(
-        temperaturaAcquaController.text.replaceAll(',', '.'),
+if (mounted) {
+  setState(() {});
+} 
+}
+
+Future<void> saveSession() async {
+  if (luogoController.text.trim().isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(T.enterLocation),
+      ),
+    );
+    return;
+  }
+
+  try {
+    setState(() {
+      loading = true;
+    });
+
+    final inizio = DateTime(
+      data.year,
+      data.month,
+      data.day,
+      oraInizio.hour,
+      oraInizio.minute,
+    );
+
+    final fine = DateTime(
+      data.year,
+      data.month,
+      data.day,
+      oraFine.hour,
+      oraFine.minute,
+    );
+
+    String? spotId;
+
+    if (selectedSpotId != null) {
+      // Spot scelto dalla lista o già associato
+      spotId = selectedSpotId;
+    } else {
+      // Ricerca per nome
+      final spot = await widget.database.getSpotByNome(
+        luogoController.text.trim(),
       );
 
-      if (widget.session == null) {
-        await widget.database.insertSession(
-          FishingSessionsCompanion.insert(
-            id: uuid.v4(),
+      if (spot != null) {
+        spotId = spot.id;
+      } else {
+        // Crea nuovo spot
+        final nuovoId = uuid.v4();
+
+        await widget.database.insertSpot(
+          SpotsCompanion.insert(
+            id: nuovoId,
             userId: Supabase.instance.client.auth.currentUser!.id,
-            spotId: Value(spotId),
-            luogo: luogoController.text,
-            tipoPescata: tipoPescata,
-            data: data,
-            oraInizio: inizio,
-            oraFine: fine,
+            nome: luogoController.text.trim(),
             latitudine: Value(latitudine),
             longitudine: Value(longitudine),
-            temperatura: Value(temperatura),
-            temperaturaAcqua: Value(acqua),
-            vento: Value(vento),
-            pressione: Value(pressione),
-            condizioni: Value(condizioni),
-            faseLunare: Value(faseLunare),
-            note: Value(
-              noteController.text,
-            ),
             createdAt: DateTime.now().toUtc(),
             updatedAt: DateTime.now().toUtc(),
           ),
         );
-      } else {
-        await widget.database.updateSession(widget.session!.copyWith(
+
+        spotId = nuovoId;
+      }
+    }
+
+    final acqua = double.tryParse(
+      temperaturaAcquaController.text.replaceAll(',', '.'),
+    );
+
+    if (widget.session == null) {
+      await widget.database.insertSession(
+        FishingSessionsCompanion.insert(
+          id: uuid.v4(),
+          userId: Supabase.instance.client.auth.currentUser!.id,
           spotId: Value(spotId),
           luogo: luogoController.text.trim(),
           tipoPescata: tipoPescata,
@@ -551,41 +532,53 @@ if (spot != null) {
           pressione: Value(pressione),
           condizioni: Value(condizioni),
           faseLunare: Value(faseLunare),
-          note: Value(
-            noteController.text,
-          ),
+          note: Value(noteController.text),
+          createdAt: DateTime.now().toUtc(),
           updatedAt: DateTime.now().toUtc(),
-        ));
-      }
-
-      if (!mounted) return;
-
-      // await widget.database.syncPendingSpots();
-      // await widget.database.syncPendingSessions();
-
-      Navigator.pop(
-        context,
-        true,
-      );
-    }
-    
-    }
-     catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString(),
-          ),
         ),
       );
-    } finally {
-      if (mounted) {
-        setState(() {
-          loading = false;
-        });
-      }
+    } else {
+      await widget.database.updateSession(
+        widget.session!.copyWith(
+          spotId: Value(spotId),
+          luogo: luogoController.text.trim(),
+          tipoPescata: tipoPescata,
+          data: data,
+          oraInizio: inizio,
+          oraFine: fine,
+          latitudine: Value(latitudine),
+          longitudine: Value(longitudine),
+          temperatura: Value(temperatura),
+          temperaturaAcqua: Value(acqua),
+          vento: Value(vento),
+          pressione: Value(pressione),
+          condizioni: Value(condizioni),
+          faseLunare: Value(faseLunare),
+          note: Value(noteController.text),
+          updatedAt: DateTime.now().toUtc(),
+        ),
+      );
+    }
+
+    if (!mounted) return;
+
+    Navigator.pop(context, true);
+  } catch (e) {
+    if (!mounted) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(e.toString()),
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        loading = false;
+      });
     }
   }
+}
 
   @override
   void dispose() {

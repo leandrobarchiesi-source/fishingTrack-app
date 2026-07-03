@@ -176,17 +176,6 @@ return NearbySpotResult(
           ))
         .go();
 
-    try {
-      await Supabase.instance.client
-          .from(
-            'fishing_sessions',
-          )
-          .delete()
-          .eq(
-            'id',
-            id,
-          );
-    } catch (e) {}
   }
 
   Future<void> updateSession(
