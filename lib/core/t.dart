@@ -642,4 +642,39 @@ class T {
         fr: 'Impossible de supprimer le spot ($count sessions liées)',
         es: 'No se puede eliminar el lugar ($count sesiones vinculadas)',
       );
+
+ static String get selectSpot => _tr(
+      it: 'Seleziona Spot',
+      en: 'Select Spot',
+      fr: 'Sélectionner un spot',
+      es: 'Seleccionar lugar',
+    );
+
+static String get editSpot => _tr(
+      it: 'Modifica Spot',
+      en: 'Edit Spot',
+      fr: 'Modifier le spot',
+      es: 'Editar lugar',
+    );
+
+static String get spotName => _tr(
+      it: 'Nome',
+      en: 'Name',
+      fr: 'Nom',
+      es: 'Nombre',
+    );
+
+static String get latitude => _tr(
+      it: 'Lat',
+      en: 'Lat',
+      fr: 'Lat',
+      es: 'Lat',
+    );
+
+static String get longitude => _tr(
+      it: 'Lon',
+      en: 'Lon',
+      fr: 'Lon',
+      es: 'Lon',
+    );
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../database/app_database.dart';
+import '../../../core/t.dart';
 
 class SpotSelectionPage extends StatefulWidget {
   final AppDatabase database;
@@ -35,8 +36,8 @@ class _SpotSelectionPageState extends State<SpotSelectionPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          "Seleziona Spot",
+        title:  Text(
+          T.selectSpot,
         ),
       ),
       body: ListView.builder(

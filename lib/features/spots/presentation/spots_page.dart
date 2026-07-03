@@ -174,8 +174,8 @@ padding: EdgeInsets.fromLTRB(
                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                    Text(
-                "📍 Modifica spot",
-                style: const TextStyle(
+  "📍 ${T.editSpot}",
+                  style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                 ),
@@ -186,20 +186,20 @@ padding: EdgeInsets.fromLTRB(
 
               TextField(
                 controller: modificaController,
-                decoration: const InputDecoration(
-                  labelText: "Nome",
+                decoration:  InputDecoration(
+labelText: T.spotName,
                 ),
               ),
 
               const SizedBox(height: 20),
 
               Text(
-                "Lat: ${s.latitudine?.toStringAsFixed(5)}",
-              ),
+"${T.latitude}: ${s.latitudine?.toStringAsFixed(5)}"      
+        ),
 
               Text(
-                "Lon: ${s.longitudine?.toStringAsFixed(5)}",
-              ),
+"${T.longitude}: ${s.longitudine?.toStringAsFixed(5)}"       
+       ),
 
               const Spacer(),
 
@@ -408,11 +408,11 @@ onPressed: () async {
                               height: 10,
                             ),
                             Text(
-                              "Lat: ${posizioneModificata?.latitude.toStringAsFixed(5)}",
+"${T.latitude}: ${posizioneModificata?.latitude.toStringAsFixed(5)}"
                             ),
                             Text(
-                              "Lon: ${posizioneModificata?.longitude.toStringAsFixed(5)}",
-                            ),
+"${T.longitude}: ${posizioneModificata?.longitude.toStringAsFixed(5)}"      
+                      ),
                             const SizedBox(
                               height: 20,
                             ),
