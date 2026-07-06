@@ -677,4 +677,104 @@ static String get longitude => _tr(
       fr: 'Lon',
       es: 'Lon',
     );
+
+static String get spotAlreadyExists => _tr(
+      it: 'Spot già esistente',
+      en: 'Existing spot',
+      fr: 'Spot existant',
+      es: 'Punto ya existente',
+    );
+
+static String get createNewSpot => _tr(
+      it: 'Crea nuovo',
+      en: 'Create new',
+      fr: 'Créer un nouveau',
+      es: 'Crear nuevo',
+    );
+
+static String get useExistingSpot => _tr(
+      it: 'Usa questo',
+      en: 'Use this',
+      fr: 'Utiliser celui-ci',
+      es: 'Usar este',
+    );
+
+static String get searchingPosition => _tr(
+      it: 'Ricerca posizione...',
+      en: 'Searching position...',
+      fr: 'Recherche de la position...',
+      es: 'Buscando ubicación...',
+    );
+
+static String get noNearbySpot => _tr(
+      it: 'Nessuno spot trovato nelle vicinanze',
+      en: 'No nearby spot found',
+      fr: 'Aucun spot trouvé à proximité',
+      es: 'No se encontró ningún punto cercano',
+    );
+
+static String get weatherUpdated => _tr(
+      it: '🌤 Meteo aggiornato',
+      en: '🌤 Weather updated',
+      fr: '🌤 Météo mise à jour',
+      es: '🌤 Tiempo actualizado',
+    );
+
+static String get updatingWeather => _tr(
+      it: 'Aggiornamento meteo...',
+      en: 'Updating weather...',
+      fr: 'Mise à jour de la météo...',
+      es: 'Actualizando el tiempo...',
+    );
+
+static String get foundSpot => _tr(
+      it: 'Spot trovato',
+      en: 'Spot found',
+      fr: 'Spot trouvé',
+      es: 'Punto encontrado',
+    );
+
+
+    static String get useExistingSpotQuestion => _tr(
+      it: 'Vuoi utilizzare questo spot oppure crearne uno nuovo?',
+      en: 'Do you want to use this spot or create a new one?',
+      fr: 'Voulez-vous utiliser ce spot ou en créer un nouveau ?',
+      es: '¿Desea utilizar este punto o crear uno nuevo?',
+    );
+
+static String distance(double meters) => _tr(
+      it: '📏 Distanza: ${meters.toStringAsFixed(1)} m',
+      en: '📏 Distance: ${meters.toStringAsFixed(1)} m',
+      fr: '📏 Distance : ${meters.toStringAsFixed(1)} m',
+      es: '📏 Distancia: ${meters.toStringAsFixed(1)} m',
+    );
+
+    static String accuracy(double meters) => _tr(
+      it: 'Precisione: ${meters.toStringAsFixed(1)} m',
+      en: 'Accuracy: ${meters.toStringAsFixed(1)} m',
+      fr: 'Précision : ${meters.toStringAsFixed(1)} m',
+      es: 'Precisión: ${meters.toStringAsFixed(1)} m',
+    );
+
+static String get positionFound => _tr(
+      it: 'Posizione trovata',
+      en: 'Position found',
+      fr: 'Position trouvée',
+      es: 'Posición encontrada',
+    );
+
+    static String gpsError(String error) => _tr(
+      it: 'Errore GPS: $error',
+      en: 'GPS error: $error',
+      fr: 'Erreur GPS : $error',
+      es: 'Error de GPS: $error',
+    );
+
+    static String get sync => _tr(
+      it: 'Sincronizza',
+      en: 'Sync',
+      fr: 'Synchroniser',
+      es: 'Sincronizar',
+    );
+
 }

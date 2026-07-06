@@ -368,7 +368,7 @@ SizedBox(
   child: ElevatedButton.icon(
     onPressed: sincronizza,
     icon: const Icon(Icons.sync),
-    label: const Text("Sincronizza"),
+label: Text(T.sync),
   ),
 ),
               const SizedBox(

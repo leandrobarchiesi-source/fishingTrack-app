@@ -70,11 +70,17 @@ class AppDatabase extends _$AppDatabase {
         },
       );
 
-  Future<List<Spot>> getAllSpots() {
-    return select(
-      spots,
-    ).get();
+Future<List<Spot>> getAllSpots() async {
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return [];
   }
+
+  return (select(spots)
+        ..where((t) => t.userId.equals(user.id)))
+      .get();
+}
 
 Future<NearbySpotResult> findNearestSpot({
   required double latitude,
@@ -124,11 +130,29 @@ return NearbySpotResult(
 );
 }
 
-  Future<List<FishingSession>> getAllSessions() {
-    return select(
-      fishingSessions,
-    ).get();
+Future<List<FishingSession>> getAllSessions() async {
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return [];
   }
+
+  return (select(fishingSessions)
+        ..where((t) => t.userId.equals(user.id)))
+      .get();
+}
+
+  Future<FishingSession?> getSessionById(String id) async {
+      final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return null;
+  }
+
+  return (select(fishingSessions)
+..where((t) => t.userId.equals(user.id)))
+      .getSingleOrNull();
+}
 
   Future<void> insertSpot(
     SpotsCompanion spot,
@@ -157,11 +181,6 @@ return NearbySpotResult(
       ),
     );
 
-    await creaSpotSeManca(
-      nome: session.luogo.value,
-      lat: session.latitudine.present ? session.latitudine.value : null,
-      lon: session.longitudine.present ? session.longitudine.value : null,
-    );
   }
 
   Future<void> deleteSession(
@@ -246,6 +265,50 @@ return NearbySpotResult(
       session.id,
     );
   }
+
+  Future<bool> completaMeteoSessione(String id) async {
+  final sessione = await (select(fishingSessions)
+        ..where((t) => t.id.equals(id)))
+      .getSingleOrNull();
+
+  if (sessione == null) return false;
+
+  if (sessione.latitudine == null || sessione.longitudine == null) {
+    return false;
+  }
+
+  // Se il meteo è già presente non fare nulla
+  if (sessione.temperatura != null &&
+      sessione.pressione != null &&
+      sessione.vento != null &&
+      sessione.condizioni != null) {
+    return false;
+  }
+
+  try {
+    final weather = WeatherService();
+
+    final meteo = await weather.getWeather(
+      lat: sessione.latitudine!,
+      lon: sessione.longitudine!,
+      data: sessione.data,
+      oraInizio: sessione.oraInizio,
+    );
+
+    await updateSession(
+      sessione.copyWith(
+        temperatura: Value(meteo.temperatura),
+        pressione: Value(meteo.pressione),
+        vento: Value(meteo.vento),
+        condizioni: Value(meteo.condizioni),
+      ),
+    );
+
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
 
   Future<void> syncPendingSessions() async {
     try {
@@ -604,32 +667,45 @@ return NearbySpotResult(
     } catch (e) {}
   }
 
-  Future<int> getSpotCount() async {
-    final data = await select(
-      spots,
-    ).get();
+Future<int> getSpotCount() async {
+  final user = Supabase.instance.client.auth.currentUser;
 
-    return data.length;
+  if (user == null) {
+    return 0;
   }
 
-  Future<Spot?> getSpotByNome(
-    String nome,
-  ) async {
-    final pulito = nome.trim();
+  final data = await (select(spots)
+        ..where((t) => t.userId.equals(user.id)))
+      .get();
 
-    // Cerca locale
-    final risultati = await (select(spots)
-          ..where(
-            (t) => t.nome.equals(
-              pulito,
-            ),
-          ))
-        .get();
+  return data.length;
+}
 
-    final locale = risultati.isEmpty ? null : risultati.first;
-    if (locale != null) {
-      return locale;
-    }
+Future<Spot?> getSpotByNome(
+  String nome,
+) async {
+  final pulito = nome.trim();
+
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return null;
+  }
+
+  // Cerca locale
+  final risultati = await (select(spots)
+        ..where(
+          (t) =>
+              t.userId.equals(user.id) &
+              t.nome.equals(pulito),
+        ))
+      .get();
+
+  final locale = risultati.isEmpty ? null : risultati.first;
+  if (locale != null) {
+    return locale;
+  }
+
 
     try {
       // Cerca Supabase

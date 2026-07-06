@@ -132,6 +132,7 @@ bool gpsSearching = false;
     }
   }
 
+
   Future<void> aggiornaMeteo() async {
     if (latitudine == null || longitudine == null) {
       return;
@@ -263,9 +264,7 @@ if (result.found) {
   gpsSpotName = result.spot!.nome;
   gpsSpotDistance = result.distance;
 
-  print(
-    "Spot: ${result.spot!.nome} - distanza: ${result.distance}",
-  );
+
 
   const suggestDistance = 20.0;
 
@@ -274,22 +273,21 @@ if (result.found) {
       context: context,
       barrierDismissible: false,
       builder: (context) => AlertDialog(
-        title: const Text("Spot già esistente"),
-        content: Text(
-          "È stato trovato lo spot\n\n"
-          "${result.spot!.nome}\n\n"
-          "Distanza: ${result.distance!.toStringAsFixed(1)} m\n\n"
-          "Vuoi utilizzare questo spot oppure crearne uno nuovo?",
-        ),
+title: Text(T.spotAlreadyExists),
+content: Text(
+  "${T.foundSpot}\n\n"
+  "${result.spot!.nome}\n\n"
+  "${T.distance(result.distance!)}\n\n"
+  "${T.useExistingSpotQuestion}",
+),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Crea nuovo"),
+child: Text(T.createNewSpot),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text("Usa questo"),
-          ),
+child: Text(T.useExistingSpot),          ),
         ],
       ),
     );
@@ -315,11 +313,11 @@ if (selectedSpotId == null) {
       longitudine!,
     );
 
-    if (places.isNotEmpty) {
-      luogoController.text = places.first.locality ??
-          places.first.subAdministrativeArea ??
-          "Posizione trovata";
-    }
+if (places.isNotEmpty) {
+  luogoController.text = places.first.locality ??
+      places.first.subAdministrativeArea ??
+      T.positionFound;
+}
   } catch (_) {
     // offline: ignora
   }
@@ -338,8 +336,8 @@ setState(() {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            "Errore GPS: $e",
+content: Text(
+  T.gpsError(e.toString()),
           ),
         ),
       );
@@ -446,6 +444,7 @@ if (mounted) {
 }
 
 Future<void> saveSession() async {
+  final sw = Stopwatch()..start();
   if (luogoController.text.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -475,7 +474,6 @@ Future<void> saveSession() async {
       oraFine.hour,
       oraFine.minute,
     );
-
     String? spotId;
 
     if (selectedSpotId != null) {
@@ -508,6 +506,7 @@ Future<void> saveSession() async {
         spotId = nuovoId;
       }
     }
+
 
     final acqua = double.tryParse(
       temperaturaAcquaController.text.replaceAll(',', '.'),
@@ -559,6 +558,7 @@ Future<void> saveSession() async {
         ),
       );
     }
+
 
     if (!mounted) return;
 
@@ -625,26 +625,25 @@ if (gpsAccuracy != null || gpsSearching)
 
           const SizedBox(height: 8),
 
-          if (gpsSearching)
-            const Row(
-              children: [
-                SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
-                SizedBox(width: 10),
-                Text("Ricerca posizione..."),
-              ],
-            ),
-
-          if (gpsAccuracy != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              "Precisione: ${gpsAccuracy!.toStringAsFixed(1)} m",
-            ),
-          ],
-
+if (gpsSearching)
+  Row(
+    children: [
+      const SizedBox(
+        width: 18,
+        height: 18,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      ),
+      const SizedBox(width: 10),
+      Text(T.searchingPosition),
+    ],
+  ),
+  
+if (gpsAccuracy != null) ...[
+  const SizedBox(height: 8),
+  Text(
+    T.accuracy(gpsAccuracy!),
+  ),
+],
           if (gpsSpotName != null) ...[
             const SizedBox(height: 8),
             Text(
@@ -655,22 +654,21 @@ if (gpsAccuracy != null || gpsSearching)
             ),
           ],
 
-          if (gpsSpotDistance != null)
-            Text(
-              "📏 Distanza: ${gpsSpotDistance!.toStringAsFixed(1)} m",
-            ),
-
+if (gpsSpotDistance != null)
+  Text(
+    T.distance(gpsSpotDistance!),
+  ),
           if (!gpsSearching &&
               gpsAccuracy != null &&
               gpsSpotName == null)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text(
-                "⚠ Nessuno spot trovato entro 8 metri",
+                "⚠ ${T.noNearbySpot}",
               ),
             ),
-        ],
-      ),
+          ],
+        ),
     ),
   ),
               const SizedBox(

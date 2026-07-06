@@ -7,6 +7,7 @@ import '../../../database/app_database.dart';
 import '../../../services/connectivity_service.dart';
 import '../../../core/t.dart';
 import '../../../repository/spot_repository.dart';
+import 'package:geolocator/geolocator.dart';
 
 class SpotsPage extends StatefulWidget {
   const SpotsPage({super.key});
@@ -20,6 +21,9 @@ final database = AppDatabase();
 late final SpotRepository repository = SpotRepository(database);
 
   List<Spot> spots = [];
+
+LatLng? initialCenter;
+double initialZoom = 15.5;
 
   Spot? selectedSpot;
 
@@ -35,16 +39,91 @@ late final SpotRepository repository = SpotRepository(database);
   void initState() {
     super.initState();
     carica();
+    Future<void> centraMappa() async {
+  try {
+    final posizione = await Geolocator.getCurrentPosition();
+
+    if (!mounted) return;
+
+    mapController.move(
+      LatLng(
+        posizione.latitude,
+        posizione.longitude,
+      ),
+      15.5,
+    );
+
+    return;
+  } catch (_) {
+    // GPS non disponibile
   }
+
+  if (spots.isNotEmpty) {
+    mapController.move(
+      LatLng(
+        spots.first.latitudine!,
+        spots.first.longitudine!,
+      ),
+      13,
+    );
+  }
+}
+  }
+  
+Future<void> centraMappa() async {
+  try {
+    final posizione = await Geolocator.getCurrentPosition();
+
+    initialCenter = LatLng(
+      posizione.latitude,
+      posizione.longitude,
+    );
+
+    initialZoom = 15.5;
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    return;
+  } catch (_) {}
+
+  if (spots.isNotEmpty) {
+    initialCenter = LatLng(
+      spots.first.latitudine!,
+      spots.first.longitudine!,
+    );
+
+    initialZoom = 13;
+
+    if (mounted) {
+      setState(() {});
+    }
+
+    return;
+  }
+
+  initialCenter = const LatLng(
+    41.8719,
+    12.5674,
+  );
+
+  initialZoom = 5.8;
+
+  if (mounted) {
+    setState(() {});
+  }
+}
 
   Future<void> carica() async {
 final data = await repository.getAllSpots();
     if (!mounted) return;
 
-    setState(() {
-      spots = data;
-    });
-  }
+setState(() {
+  spots = data;
+});
+
+await centraMappa();  }
 
 Future<void> salvaModificaSpot() async {
   if (selectedSpot == null || posizioneModificata == null) {
@@ -262,17 +341,22 @@ onPressed: () async {
 
           // ONLINE
 
-          return Stack(
-            children: [
+// ONLINE
+
+if (initialCenter == null) {
+  return const Center(
+    child: CircularProgressIndicator(),
+  );
+}
+
+return Stack(
+              children: [
               FlutterMap(
                 mapController: mapController,
-                options: const MapOptions(
-                  initialCenter: LatLng(
-                    41.8719,
-                    12.5674,
-                  ),
-                  initialZoom: 5.8,
-                ),
+options: MapOptions(
+  initialCenter: initialCenter!,
+  initialZoom: initialZoom,
+),
                 children: [
                   TileLayer(
                     urlTemplate:

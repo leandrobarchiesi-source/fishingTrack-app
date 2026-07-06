@@ -5,8 +5,8 @@ import 'new_session_page.dart';
 import '../../../database/app_database.dart';
 import '../../../core/t.dart';
 
-class SessionDetailPage extends StatelessWidget {
-  final FishingSession session;
+class SessionDetailPage extends StatefulWidget {
+    final FishingSession session;
 
   final AppDatabase database;
 
@@ -15,6 +15,51 @@ class SessionDetailPage extends StatelessWidget {
     required this.session,
     required this.database,
   });
+
+  @override
+State<SessionDetailPage> createState() =>
+    _SessionDetailPageState();
+}
+
+class _SessionDetailPageState
+    extends State<SessionDetailPage> {
+
+      late FishingSession session;
+
+@override
+void initState() {
+  super.initState();
+
+  session = widget.session;
+
+  WidgetsBinding.instance.addPostFrameCallback((_) {
+    aggiornaMeteoSeNecessario();
+  });
+}
+
+Future<void> aggiornaMeteoSeNecessario() async {
+  final aggiornato =
+      await widget.database.completaMeteoSessione(session.id);
+
+  if (!mounted || !aggiornato) {
+    return;
+  }
+
+  final nuova =
+      await widget.database.getSessionById(session.id);
+
+  if (nuova != null) {
+    setState(() {
+      session = nuova;
+    });
+  }
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(T.weatherUpdated)
+    ),
+  );
+}
 
   String formatDate(DateTime d) {
     return "${d.day.toString().padLeft(2, '0')}/"
@@ -68,8 +113,8 @@ class SessionDetailPage extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => NewSessionPage(
-                    database: database,
-                    session: session,
+                    database: widget.database,
+                    session: widget.session,
                   ),
                 ),
               );
@@ -127,7 +172,7 @@ class SessionDetailPage extends StatelessWidget {
                 return;
               }
 
-              await database.deleteSession(
+              await widget.database.deleteSession(
                 session.id,
               );
 
