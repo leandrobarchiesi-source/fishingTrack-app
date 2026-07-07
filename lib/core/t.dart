@@ -266,6 +266,7 @@ class T {
         es: 'El perfil solo puede modificarse en línea',
       );
 
+
   static String get newPassword => _tr(
         it: 'Nuova password',
         en: 'New Password',

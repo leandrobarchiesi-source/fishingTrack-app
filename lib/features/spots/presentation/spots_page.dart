@@ -123,7 +123,8 @@ setState(() {
   spots = data;
 });
 
-await centraMappa();  }
+await centraMappa();
+  }
 
 Future<void> salvaModificaSpot() async {
   if (selectedSpot == null || posizioneModificata == null) {

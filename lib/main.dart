@@ -113,23 +113,6 @@ class _HomePageState extends State<HomePage> {
     try {
       spotCount = await database.getSpotCount();
 
-      final online = await ConnectivityService.isOnline();
-
-      if (online) {
-        await profileService.creaProfiloSeManca();
-        await profileService.caricaLingua();
-
-
-        spotCount = await database.getSpotCount();
-      }
-
-      // MINIMO TEMPO DI VISUALIZZAZIONE
-
-      await Future.delayed(
-        const Duration(
-          milliseconds: 1200,
-        ),
-      );
     } catch (e) {
       print(
         "Errore inizializzazione: $e",
@@ -215,32 +198,18 @@ class _HomePageState extends State<HomePage> {
               Icons.person,
             ),
             onPressed: () async {
-              final online = await ConnectivityService.isOnline();
-
-              if (!online) {
-                if (!mounted) return;
-
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "Profilo disponibile solo online",
-                    ),
-                  ),
-                );
-
-                return;
-              }
+              
 
               if (!mounted) return;
 
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => const ProfilePage(),
-                ),
-              );
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => ProfilePage(
+      database: database,
+    ),
+  ),
+);
             },
           ),
         ],

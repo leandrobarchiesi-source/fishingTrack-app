@@ -1440,17 +1440,481 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
   }
 }
 
+class $ProfilesTable extends Profiles with TableInfo<$ProfilesTable, Profile> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ProfilesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nomeMeta = const VerificationMeta('nome');
+  @override
+  late final GeneratedColumn<String> nome = GeneratedColumn<String>(
+      'nome', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _cognomeMeta =
+      const VerificationMeta('cognome');
+  @override
+  late final GeneratedColumn<String> cognome = GeneratedColumn<String>(
+      'cognome', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _emailMeta = const VerificationMeta('email');
+  @override
+  late final GeneratedColumn<String> email = GeneratedColumn<String>(
+      'email', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _languageMeta =
+      const VerificationMeta('language');
+  @override
+  late final GeneratedColumn<String> language = GeneratedColumn<String>(
+      'language', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('it'));
+  static const VerificationMeta _avatarMeta = const VerificationMeta('avatar');
+  @override
+  late final GeneratedColumn<String> avatar = GeneratedColumn<String>(
+      'avatar', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+      'synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
+      defaultValue: const Constant(true));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        nome,
+        cognome,
+        email,
+        language,
+        avatar,
+        synced,
+        createdAt,
+        updatedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'profiles';
+  @override
+  VerificationContext validateIntegrity(Insertable<Profile> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('nome')) {
+      context.handle(
+          _nomeMeta, nome.isAcceptableOrUnknown(data['nome']!, _nomeMeta));
+    }
+    if (data.containsKey('cognome')) {
+      context.handle(_cognomeMeta,
+          cognome.isAcceptableOrUnknown(data['cognome']!, _cognomeMeta));
+    }
+    if (data.containsKey('email')) {
+      context.handle(
+          _emailMeta, email.isAcceptableOrUnknown(data['email']!, _emailMeta));
+    }
+    if (data.containsKey('language')) {
+      context.handle(_languageMeta,
+          language.isAcceptableOrUnknown(data['language']!, _languageMeta));
+    }
+    if (data.containsKey('avatar')) {
+      context.handle(_avatarMeta,
+          avatar.isAcceptableOrUnknown(data['avatar']!, _avatarMeta));
+    }
+    if (data.containsKey('synced')) {
+      context.handle(_syncedMeta,
+          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    } else if (isInserting) {
+      context.missing(_createdAtMeta);
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    } else if (isInserting) {
+      context.missing(_updatedAtMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  Profile map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return Profile(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      nome: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}nome']),
+      cognome: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}cognome']),
+      email: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}email']),
+      language: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}language'])!,
+      avatar: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}avatar']),
+      synced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+    );
+  }
+
+  @override
+  $ProfilesTable createAlias(String alias) {
+    return $ProfilesTable(attachedDatabase, alias);
+  }
+}
+
+class Profile extends DataClass implements Insertable<Profile> {
+  final String id;
+  final String? nome;
+  final String? cognome;
+  final String? email;
+  final String language;
+  final String? avatar;
+  final bool synced;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  const Profile(
+      {required this.id,
+      this.nome,
+      this.cognome,
+      this.email,
+      required this.language,
+      this.avatar,
+      required this.synced,
+      required this.createdAt,
+      required this.updatedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    if (!nullToAbsent || nome != null) {
+      map['nome'] = Variable<String>(nome);
+    }
+    if (!nullToAbsent || cognome != null) {
+      map['cognome'] = Variable<String>(cognome);
+    }
+    if (!nullToAbsent || email != null) {
+      map['email'] = Variable<String>(email);
+    }
+    map['language'] = Variable<String>(language);
+    if (!nullToAbsent || avatar != null) {
+      map['avatar'] = Variable<String>(avatar);
+    }
+    map['synced'] = Variable<bool>(synced);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    return map;
+  }
+
+  ProfilesCompanion toCompanion(bool nullToAbsent) {
+    return ProfilesCompanion(
+      id: Value(id),
+      nome: nome == null && nullToAbsent ? const Value.absent() : Value(nome),
+      cognome: cognome == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cognome),
+      email:
+          email == null && nullToAbsent ? const Value.absent() : Value(email),
+      language: Value(language),
+      avatar:
+          avatar == null && nullToAbsent ? const Value.absent() : Value(avatar),
+      synced: Value(synced),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+    );
+  }
+
+  factory Profile.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return Profile(
+      id: serializer.fromJson<String>(json['id']),
+      nome: serializer.fromJson<String?>(json['nome']),
+      cognome: serializer.fromJson<String?>(json['cognome']),
+      email: serializer.fromJson<String?>(json['email']),
+      language: serializer.fromJson<String>(json['language']),
+      avatar: serializer.fromJson<String?>(json['avatar']),
+      synced: serializer.fromJson<bool>(json['synced']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'nome': serializer.toJson<String?>(nome),
+      'cognome': serializer.toJson<String?>(cognome),
+      'email': serializer.toJson<String?>(email),
+      'language': serializer.toJson<String>(language),
+      'avatar': serializer.toJson<String?>(avatar),
+      'synced': serializer.toJson<bool>(synced),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+    };
+  }
+
+  Profile copyWith(
+          {String? id,
+          Value<String?> nome = const Value.absent(),
+          Value<String?> cognome = const Value.absent(),
+          Value<String?> email = const Value.absent(),
+          String? language,
+          Value<String?> avatar = const Value.absent(),
+          bool? synced,
+          DateTime? createdAt,
+          DateTime? updatedAt}) =>
+      Profile(
+        id: id ?? this.id,
+        nome: nome.present ? nome.value : this.nome,
+        cognome: cognome.present ? cognome.value : this.cognome,
+        email: email.present ? email.value : this.email,
+        language: language ?? this.language,
+        avatar: avatar.present ? avatar.value : this.avatar,
+        synced: synced ?? this.synced,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+      );
+  Profile copyWithCompanion(ProfilesCompanion data) {
+    return Profile(
+      id: data.id.present ? data.id.value : this.id,
+      nome: data.nome.present ? data.nome.value : this.nome,
+      cognome: data.cognome.present ? data.cognome.value : this.cognome,
+      email: data.email.present ? data.email.value : this.email,
+      language: data.language.present ? data.language.value : this.language,
+      avatar: data.avatar.present ? data.avatar.value : this.avatar,
+      synced: data.synced.present ? data.synced.value : this.synced,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('Profile(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('cognome: $cognome, ')
+          ..write('email: $email, ')
+          ..write('language: $language, ')
+          ..write('avatar: $avatar, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+      id, nome, cognome, email, language, avatar, synced, createdAt, updatedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is Profile &&
+          other.id == this.id &&
+          other.nome == this.nome &&
+          other.cognome == this.cognome &&
+          other.email == this.email &&
+          other.language == this.language &&
+          other.avatar == this.avatar &&
+          other.synced == this.synced &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt);
+}
+
+class ProfilesCompanion extends UpdateCompanion<Profile> {
+  final Value<String> id;
+  final Value<String?> nome;
+  final Value<String?> cognome;
+  final Value<String?> email;
+  final Value<String> language;
+  final Value<String?> avatar;
+  final Value<bool> synced;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<int> rowid;
+  const ProfilesCompanion({
+    this.id = const Value.absent(),
+    this.nome = const Value.absent(),
+    this.cognome = const Value.absent(),
+    this.email = const Value.absent(),
+    this.language = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ProfilesCompanion.insert({
+    required String id,
+    this.nome = const Value.absent(),
+    this.cognome = const Value.absent(),
+    this.email = const Value.absent(),
+    this.language = const Value.absent(),
+    this.avatar = const Value.absent(),
+    this.synced = const Value.absent(),
+    required DateTime createdAt,
+    required DateTime updatedAt,
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        createdAt = Value(createdAt),
+        updatedAt = Value(updatedAt);
+  static Insertable<Profile> custom({
+    Expression<String>? id,
+    Expression<String>? nome,
+    Expression<String>? cognome,
+    Expression<String>? email,
+    Expression<String>? language,
+    Expression<String>? avatar,
+    Expression<bool>? synced,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (nome != null) 'nome': nome,
+      if (cognome != null) 'cognome': cognome,
+      if (email != null) 'email': email,
+      if (language != null) 'language': language,
+      if (avatar != null) 'avatar': avatar,
+      if (synced != null) 'synced': synced,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ProfilesCompanion copyWith(
+      {Value<String>? id,
+      Value<String?>? nome,
+      Value<String?>? cognome,
+      Value<String?>? email,
+      Value<String>? language,
+      Value<String?>? avatar,
+      Value<bool>? synced,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<int>? rowid}) {
+    return ProfilesCompanion(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      cognome: cognome ?? this.cognome,
+      email: email ?? this.email,
+      language: language ?? this.language,
+      avatar: avatar ?? this.avatar,
+      synced: synced ?? this.synced,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (nome.present) {
+      map['nome'] = Variable<String>(nome.value);
+    }
+    if (cognome.present) {
+      map['cognome'] = Variable<String>(cognome.value);
+    }
+    if (email.present) {
+      map['email'] = Variable<String>(email.value);
+    }
+    if (language.present) {
+      map['language'] = Variable<String>(language.value);
+    }
+    if (avatar.present) {
+      map['avatar'] = Variable<String>(avatar.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ProfilesCompanion(')
+          ..write('id: $id, ')
+          ..write('nome: $nome, ')
+          ..write('cognome: $cognome, ')
+          ..write('email: $email, ')
+          ..write('language: $language, ')
+          ..write('avatar: $avatar, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
   late final $FishingSessionsTable fishingSessions =
       $FishingSessionsTable(this);
   late final $SpotsTable spots = $SpotsTable(this);
+  late final $ProfilesTable profiles = $ProfilesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities => [fishingSessions, spots];
+  List<DatabaseSchemaEntity> get allSchemaEntities =>
+      [fishingSessions, spots, profiles];
 }
 
 typedef $$FishingSessionsTableCreateCompanionBuilder = FishingSessionsCompanion
@@ -2093,6 +2557,231 @@ typedef $$SpotsTableProcessedTableManager = ProcessedTableManager<
     (Spot, BaseReferences<_$AppDatabase, $SpotsTable, Spot>),
     Spot,
     PrefetchHooks Function()>;
+typedef $$ProfilesTableCreateCompanionBuilder = ProfilesCompanion Function({
+  required String id,
+  Value<String?> nome,
+  Value<String?> cognome,
+  Value<String?> email,
+  Value<String> language,
+  Value<String?> avatar,
+  Value<bool> synced,
+  required DateTime createdAt,
+  required DateTime updatedAt,
+  Value<int> rowid,
+});
+typedef $$ProfilesTableUpdateCompanionBuilder = ProfilesCompanion Function({
+  Value<String> id,
+  Value<String?> nome,
+  Value<String?> cognome,
+  Value<String?> email,
+  Value<String> language,
+  Value<String?> avatar,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<int> rowid,
+});
+
+class $$ProfilesTableFilterComposer
+    extends Composer<_$AppDatabase, $ProfilesTable> {
+  $$ProfilesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get nome => $composableBuilder(
+      column: $table.nome, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get cognome => $composableBuilder(
+      column: $table.cognome, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get email => $composableBuilder(
+      column: $table.email, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get language => $composableBuilder(
+      column: $table.language, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+}
+
+class $$ProfilesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ProfilesTable> {
+  $$ProfilesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get nome => $composableBuilder(
+      column: $table.nome, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get cognome => $composableBuilder(
+      column: $table.cognome, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get email => $composableBuilder(
+      column: $table.email, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get language => $composableBuilder(
+      column: $table.language, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get avatar => $composableBuilder(
+      column: $table.avatar, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$ProfilesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ProfilesTable> {
+  $$ProfilesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get nome =>
+      $composableBuilder(column: $table.nome, builder: (column) => column);
+
+  GeneratedColumn<String> get cognome =>
+      $composableBuilder(column: $table.cognome, builder: (column) => column);
+
+  GeneratedColumn<String> get email =>
+      $composableBuilder(column: $table.email, builder: (column) => column);
+
+  GeneratedColumn<String> get language =>
+      $composableBuilder(column: $table.language, builder: (column) => column);
+
+  GeneratedColumn<String> get avatar =>
+      $composableBuilder(column: $table.avatar, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+}
+
+class $$ProfilesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $ProfilesTable,
+    Profile,
+    $$ProfilesTableFilterComposer,
+    $$ProfilesTableOrderingComposer,
+    $$ProfilesTableAnnotationComposer,
+    $$ProfilesTableCreateCompanionBuilder,
+    $$ProfilesTableUpdateCompanionBuilder,
+    (Profile, BaseReferences<_$AppDatabase, $ProfilesTable, Profile>),
+    Profile,
+    PrefetchHooks Function()> {
+  $$ProfilesTableTableManager(_$AppDatabase db, $ProfilesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ProfilesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ProfilesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ProfilesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String?> nome = const Value.absent(),
+            Value<String?> cognome = const Value.absent(),
+            Value<String?> email = const Value.absent(),
+            Value<String> language = const Value.absent(),
+            Value<String?> avatar = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ProfilesCompanion(
+            id: id,
+            nome: nome,
+            cognome: cognome,
+            email: email,
+            language: language,
+            avatar: avatar,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            Value<String?> nome = const Value.absent(),
+            Value<String?> cognome = const Value.absent(),
+            Value<String?> email = const Value.absent(),
+            Value<String> language = const Value.absent(),
+            Value<String?> avatar = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            required DateTime createdAt,
+            required DateTime updatedAt,
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              ProfilesCompanion.insert(
+            id: id,
+            nome: nome,
+            cognome: cognome,
+            email: email,
+            language: language,
+            avatar: avatar,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$ProfilesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $ProfilesTable,
+    Profile,
+    $$ProfilesTableFilterComposer,
+    $$ProfilesTableOrderingComposer,
+    $$ProfilesTableAnnotationComposer,
+    $$ProfilesTableCreateCompanionBuilder,
+    $$ProfilesTableUpdateCompanionBuilder,
+    (Profile, BaseReferences<_$AppDatabase, $ProfilesTable, Profile>),
+    Profile,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2101,4 +2790,6 @@ class $AppDatabaseManager {
       $$FishingSessionsTableTableManager(_db, _db.fishingSessions);
   $$SpotsTableTableManager get spots =>
       $$SpotsTableTableManager(_db, _db.spots);
+  $$ProfilesTableTableManager get profiles =>
+      $$ProfilesTableTableManager(_db, _db.profiles);
 }

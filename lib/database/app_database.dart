@@ -9,6 +9,7 @@ import '../core/wheater/weather_service.dart';
 import 'package:geolocator/geolocator.dart';
 import 'tables/fishing_sessions.dart';
 import 'tables/spots.dart';
+import 'tables/profiles.dart';
 import 'nearby_spot_result.dart';
 
 part 'app_database.g.dart';
@@ -17,6 +18,7 @@ part 'app_database.g.dart';
   tables: [
     FishingSessions,
     Spots,
+    Profiles,
   ],
 )
 class AppDatabase extends _$AppDatabase {
@@ -26,7 +28,7 @@ class AppDatabase extends _$AppDatabase {
         );
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -67,6 +69,9 @@ class AppDatabase extends _$AppDatabase {
               fishingSessions.temperaturaAcqua,
             );
           }
+          if (from < 7) {
+  await m.createTable(profiles);
+}
         },
       );
 
@@ -365,6 +370,40 @@ Future<List<FishingSession>> getAllSessions() async {
       }
     } catch (e) {}
   }
+
+  Future<void> downloadProfile() async {
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return;
+  }
+
+  try {
+    final remoto = await Supabase.instance.client
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .single();
+
+    await saveProfile(
+      ProfilesCompanion.insert(
+        id: user.id,
+        nome: Value(remoto['nome']),
+        cognome: Value(remoto['cognome']),
+        email: Value(user.email),
+        language: remoto['language'] ?? 'it',
+        avatar: Value(remoto['avatar']),
+        synced: const Value(true),
+        createdAt: DateTime.parse(remoto['created_at']),
+        updatedAt: DateTime.parse(remoto['updated_at']),
+      ),
+    );
+  } catch (e) {
+    print("Errore download profilo: $e");
+  }
+      print("profilo scaricato");
+
+}
 
   Future<void> syncFromSupabase() async {
     final user = Supabase.instance.client.auth.currentUser;
@@ -751,6 +790,41 @@ Future<Spot?> getSpotByNome(
       return null;
     }
   }
+
+  Future<Profile?> getProfile() async {
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return null;
+  }
+
+  return (select(profiles)
+        ..where((t) => t.id.equals(user.id)))
+      .getSingleOrNull();
+}
+
+Future<void> saveProfile(ProfilesCompanion profile) async {
+  await into(profiles).insert(
+    profile,
+    mode: InsertMode.insertOrReplace,
+  );
+}
+
+Future<void> updateProfile(Profile profile) async {
+  await (update(profiles)
+        ..where((t) => t.id.equals(profile.id)))
+      .write(
+    ProfilesCompanion(
+      nome: Value(profile.nome),
+      cognome: Value(profile.cognome),
+      email: Value(profile.email),
+      language: Value(profile.language),
+      avatar: Value(profile.avatar),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
 
   Future<void> creaSpotSeManca({
     required String nome,

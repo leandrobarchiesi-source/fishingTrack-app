@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
+import 'package:drift/drift.dart';
 import '../../auth/presentation/login_page.dart';
 import '../../../core/app_settings.dart';
 import '../../../core/t.dart';
 import '../../../core/restart_widget.dart';
+import '../../../database/app_database.dart';
 
 class ProfilePage extends StatefulWidget {
+  final AppDatabase database;
+
   const ProfilePage({
     super.key,
+    required this.database,
   });
-
   @override
   State<ProfilePage> createState() => _ProfilePageState();
 }
@@ -31,49 +34,72 @@ class _ProfilePageState extends State<ProfilePage> {
     caricaProfilo();
   }
 
-  Future<void> caricaProfilo() async {
-    try {
-      final user = Supabase.instance.client.auth.currentUser;
+Future<void> caricaProfilo() async {
+  try {
+    // 1. Cerca prima il profilo locale
+    final locale = await widget.database.getProfile();
 
-      if (user == null) {
-        if (!mounted) return;
+    if (locale != null) {
+      nomeController.text = locale.nome ?? "";
+      cognomeController.text = locale.cognome ?? "";
+      lingua = locale.language;
 
+      if (mounted) {
         setState(() {
           loading = false;
         });
-
-        return;
       }
 
-      final profilo = await Supabase.instance.client
-          .from(
-            'profiles',
-          )
-          .select()
-          .eq(
-            'id',
-            user.id,
-          )
-          .single();
-
-      nomeController.text = profilo['nome'] ?? "";
-
-      cognomeController.text = profilo['cognome'] ?? "";
-
-      lingua = profilo['language'] ?? "it";
-    } catch (e) {
-      print(
-        "Profilo offline: $e",
-      );
+      return;
     }
 
-    if (!mounted) return;
+    // 2. Se non esiste localmente prova Supabase
+    final user = Supabase.instance.client.auth.currentUser;
 
-    setState(() {
-      loading = false;
-    });
+    if (user == null) {
+      if (!mounted) return;
+
+      setState(() {
+        loading = false;
+      });
+
+      return;
+    }
+
+    final profilo = await Supabase.instance.client
+        .from('profiles')
+        .select()
+        .eq('id', user.id)
+        .single();
+
+    // 3. Salva in SQLite
+    await widget.database.saveProfile(
+      ProfilesCompanion.insert(
+        id: user.id,
+        nome: Value(profilo['nome']),
+        cognome: Value(profilo['cognome']),
+        email: Value(user.email),
+        language: profilo['language'] ?? 'it',
+        avatar: Value(profilo['avatar']),
+        createdAt: DateTime.parse(profilo['created_at']),
+        updatedAt: DateTime.parse(profilo['updated_at']),
+      ),
+    );
+
+    // 4. Aggiorna la UI
+    nomeController.text = profilo['nome'] ?? "";
+    cognomeController.text = profilo['cognome'] ?? "";
+    lingua = profilo['language'] ?? "it";
+  } catch (e) {
+    debugPrint("Errore caricamento profilo: $e");
   }
 
+  if (!mounted) return;
+
+  setState(() {
+    loading = false;
+  });
+}
   Future<void> salva() async {
     final user = Supabase.instance.client.auth.currentUser;
 

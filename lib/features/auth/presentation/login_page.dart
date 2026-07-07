@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../main.dart';
 import '../../../core/auth/auth_service.dart';
+import '../../../database/app_database.dart';
 
 import 'register_page.dart';
 
@@ -51,6 +52,8 @@ class _LoginPageState extends State<LoginPage> {
         email: email,
         password: password,
       );
+
+await database.downloadProfile();
 
       if (!mounted) {
         return;
