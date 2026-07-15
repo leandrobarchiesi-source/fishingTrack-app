@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 
 import '../../../main.dart';
 import '../../../core/auth/auth_service.dart';
-import '../../../database/app_database.dart';
 
 import 'register_page.dart';
 

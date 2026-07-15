@@ -36,9 +36,9 @@ class FishingSessions extends Table {
 
   TextColumn get faseLunare => text().nullable()();
 
-  BoolColumn get synced => boolean().withDefault(
-        const Constant(false),
-      )();
+  BoolColumn get synced => boolean().withDefault(const Constant(false),)();
+
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
 

@@ -241,7 +241,7 @@ bool gpsSearching = false;
       }
 
 final gpsFix = await gpsService.acquireBestPosition(
-          targetAccuracy: 5,
+          targetAccuracy: 10,
         timeout: const Duration(seconds: 20),
         onUpdate: (position) {
           gpsAccuracy = position.accuracy;
@@ -307,20 +307,23 @@ child: Text(T.useExistingSpot),          ),
   gpsSpotDistance = null;
 }
 if (selectedSpotId == null) {
+final online = await ConnectivityService.isOnline();
+
+if (selectedSpotId == null && online) {
   try {
     final places = await placemarkFromCoordinates(
       latitudine!,
       longitudine!,
     );
 
-if (places.isNotEmpty) {
-  luogoController.text = places.first.locality ??
-      places.first.subAdministrativeArea ??
-      T.positionFound;
+    if (places.isNotEmpty) {
+      luogoController.text =
+          places.first.locality ??
+          places.first.subAdministrativeArea ??
+          T.positionFound;
+    }
+  } catch (_) {}
 }
-  } catch (_) {
-    // offline: ignora
-  }
 }
       try {
         await aggiornaMeteo();
@@ -485,6 +488,7 @@ Future<void> saveSession() async {
         luogoController.text.trim(),
       );
 
+
       if (spot != null) {
         spotId = spot.id;
       } else {
@@ -559,8 +563,8 @@ Future<void> saveSession() async {
       );
     }
 
-
     if (!mounted) return;
+
 
     Navigator.pop(context, true);
   } catch (e) {
@@ -662,7 +666,7 @@ if (gpsSpotDistance != null)
               gpsAccuracy != null &&
               gpsSpotName == null)
             Padding(
-              padding: EdgeInsets.only(top: 8),
+              padding: const EdgeInsets.only(top: 8),
               child: Text(
                 "⚠ ${T.noNearbySpot}",
               ),
@@ -766,7 +770,7 @@ if (gpsSpotDistance != null)
               height: 16,
             ),
             DropdownButtonFormField<String>(
-              value: tipoPescata,
+              initialValue: tipoPescata,
               items: [
                 DropdownMenuItem(
                   value: 'Gara',

@@ -113,6 +113,12 @@ class $FishingSessionsTable extends FishingSessions
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -145,6 +151,7 @@ class $FishingSessionsTable extends FishingSessions
         condizioni,
         faseLunare,
         synced,
+        deletedAt,
         createdAt,
         updatedAt
       ];
@@ -257,6 +264,10 @@ class $FishingSessionsTable extends FishingSessions
       context.handle(_syncedMeta,
           synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -314,6 +325,8 @@ class $FishingSessionsTable extends FishingSessions
           .read(DriftSqlType.string, data['${effectivePrefix}fase_lunare']),
       synced: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -346,6 +359,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
   final String? condizioni;
   final String? faseLunare;
   final bool synced;
+  final DateTime? deletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   const FishingSession(
@@ -367,6 +381,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       this.condizioni,
       this.faseLunare,
       required this.synced,
+      this.deletedAt,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -410,6 +425,9 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       map['fase_lunare'] = Variable<String>(faseLunare);
     }
     map['synced'] = Variable<bool>(synced);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -451,6 +469,9 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           ? const Value.absent()
           : Value(faseLunare),
       synced: Value(synced),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -478,6 +499,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       condizioni: serializer.fromJson<String?>(json['condizioni']),
       faseLunare: serializer.fromJson<String?>(json['faseLunare']),
       synced: serializer.fromJson<bool>(json['synced']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -504,6 +526,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       'condizioni': serializer.toJson<String?>(condizioni),
       'faseLunare': serializer.toJson<String?>(faseLunare),
       'synced': serializer.toJson<bool>(synced),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -528,6 +551,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           Value<String?> condizioni = const Value.absent(),
           Value<String?> faseLunare = const Value.absent(),
           bool? synced,
+          Value<DateTime?> deletedAt = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       FishingSession(
@@ -551,6 +575,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
         condizioni: condizioni.present ? condizioni.value : this.condizioni,
         faseLunare: faseLunare.present ? faseLunare.value : this.faseLunare,
         synced: synced ?? this.synced,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -582,6 +607,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       faseLunare:
           data.faseLunare.present ? data.faseLunare.value : this.faseLunare,
       synced: data.synced.present ? data.synced.value : this.synced,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -608,6 +634,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           ..write('condizioni: $condizioni, ')
           ..write('faseLunare: $faseLunare, ')
           ..write('synced: $synced, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -615,27 +642,29 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
   }
 
   @override
-  int get hashCode => Object.hash(
-      id,
-      userId,
-      spotId,
-      luogo,
-      tipoPescata,
-      latitudine,
-      longitudine,
-      data,
-      oraInizio,
-      oraFine,
-      note,
-      temperatura,
-      temperaturaAcqua,
-      vento,
-      pressione,
-      condizioni,
-      faseLunare,
-      synced,
-      createdAt,
-      updatedAt);
+  int get hashCode => Object.hashAll([
+        id,
+        userId,
+        spotId,
+        luogo,
+        tipoPescata,
+        latitudine,
+        longitudine,
+        data,
+        oraInizio,
+        oraFine,
+        note,
+        temperatura,
+        temperaturaAcqua,
+        vento,
+        pressione,
+        condizioni,
+        faseLunare,
+        synced,
+        deletedAt,
+        createdAt,
+        updatedAt
+      ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -658,6 +687,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           other.condizioni == this.condizioni &&
           other.faseLunare == this.faseLunare &&
           other.synced == this.synced &&
+          other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -681,6 +711,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
   final Value<String?> condizioni;
   final Value<String?> faseLunare;
   final Value<bool> synced;
+  final Value<DateTime?> deletedAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -703,6 +734,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     this.condizioni = const Value.absent(),
     this.faseLunare = const Value.absent(),
     this.synced = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -726,6 +758,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     this.condizioni = const Value.absent(),
     this.faseLunare = const Value.absent(),
     this.synced = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -757,6 +790,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     Expression<String>? condizioni,
     Expression<String>? faseLunare,
     Expression<bool>? synced,
+    Expression<DateTime>? deletedAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -780,6 +814,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       if (condizioni != null) 'condizioni': condizioni,
       if (faseLunare != null) 'fase_lunare': faseLunare,
       if (synced != null) 'synced': synced,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -805,6 +840,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       Value<String?>? condizioni,
       Value<String?>? faseLunare,
       Value<bool>? synced,
+      Value<DateTime?>? deletedAt,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -827,6 +863,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       condizioni: condizioni ?? this.condizioni,
       faseLunare: faseLunare ?? this.faseLunare,
       synced: synced ?? this.synced,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -890,6 +927,9 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -923,6 +963,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
           ..write('condizioni: $condizioni, ')
           ..write('faseLunare: $faseLunare, ')
           ..write('synced: $synced, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -987,6 +1028,12 @@ class $SpotsTable extends Spots with TableInfo<$SpotsTable, Spot> {
       defaultConstraints:
           GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
       defaultValue: const Constant(false));
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -1009,6 +1056,7 @@ class $SpotsTable extends Spots with TableInfo<$SpotsTable, Spot> {
         note,
         preferito,
         synced,
+        deletedAt,
         createdAt,
         updatedAt
       ];
@@ -1063,6 +1111,10 @@ class $SpotsTable extends Spots with TableInfo<$SpotsTable, Spot> {
       context.handle(_syncedMeta,
           synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
     }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -1100,6 +1152,8 @@ class $SpotsTable extends Spots with TableInfo<$SpotsTable, Spot> {
           .read(DriftSqlType.bool, data['${effectivePrefix}preferito'])!,
       synced: attachedDatabase.typeMapping
           .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -1122,6 +1176,7 @@ class Spot extends DataClass implements Insertable<Spot> {
   final String? note;
   final bool preferito;
   final bool synced;
+  final DateTime? deletedAt;
   final DateTime createdAt;
   final DateTime updatedAt;
   const Spot(
@@ -1133,6 +1188,7 @@ class Spot extends DataClass implements Insertable<Spot> {
       this.note,
       required this.preferito,
       required this.synced,
+      this.deletedAt,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -1152,6 +1208,9 @@ class Spot extends DataClass implements Insertable<Spot> {
     }
     map['preferito'] = Variable<bool>(preferito);
     map['synced'] = Variable<bool>(synced);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -1171,6 +1230,9 @@ class Spot extends DataClass implements Insertable<Spot> {
       note: note == null && nullToAbsent ? const Value.absent() : Value(note),
       preferito: Value(preferito),
       synced: Value(synced),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -1188,6 +1250,7 @@ class Spot extends DataClass implements Insertable<Spot> {
       note: serializer.fromJson<String?>(json['note']),
       preferito: serializer.fromJson<bool>(json['preferito']),
       synced: serializer.fromJson<bool>(json['synced']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -1204,6 +1267,7 @@ class Spot extends DataClass implements Insertable<Spot> {
       'note': serializer.toJson<String?>(note),
       'preferito': serializer.toJson<bool>(preferito),
       'synced': serializer.toJson<bool>(synced),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -1218,6 +1282,7 @@ class Spot extends DataClass implements Insertable<Spot> {
           Value<String?> note = const Value.absent(),
           bool? preferito,
           bool? synced,
+          Value<DateTime?> deletedAt = const Value.absent(),
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       Spot(
@@ -1229,6 +1294,7 @@ class Spot extends DataClass implements Insertable<Spot> {
         note: note.present ? note.value : this.note,
         preferito: preferito ?? this.preferito,
         synced: synced ?? this.synced,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -1244,6 +1310,7 @@ class Spot extends DataClass implements Insertable<Spot> {
       note: data.note.present ? data.note.value : this.note,
       preferito: data.preferito.present ? data.preferito.value : this.preferito,
       synced: data.synced.present ? data.synced.value : this.synced,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -1260,6 +1327,7 @@ class Spot extends DataClass implements Insertable<Spot> {
           ..write('note: $note, ')
           ..write('preferito: $preferito, ')
           ..write('synced: $synced, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -1268,7 +1336,7 @@ class Spot extends DataClass implements Insertable<Spot> {
 
   @override
   int get hashCode => Object.hash(id, userId, nome, latitudine, longitudine,
-      note, preferito, synced, createdAt, updatedAt);
+      note, preferito, synced, deletedAt, createdAt, updatedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -1281,6 +1349,7 @@ class Spot extends DataClass implements Insertable<Spot> {
           other.note == this.note &&
           other.preferito == this.preferito &&
           other.synced == this.synced &&
+          other.deletedAt == this.deletedAt &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -1294,6 +1363,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
   final Value<String?> note;
   final Value<bool> preferito;
   final Value<bool> synced;
+  final Value<DateTime?> deletedAt;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -1306,6 +1376,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
     this.note = const Value.absent(),
     this.preferito = const Value.absent(),
     this.synced = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -1319,6 +1390,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
     this.note = const Value.absent(),
     this.preferito = const Value.absent(),
     this.synced = const Value.absent(),
+    this.deletedAt = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -1336,6 +1408,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
     Expression<String>? note,
     Expression<bool>? preferito,
     Expression<bool>? synced,
+    Expression<DateTime>? deletedAt,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -1349,6 +1422,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
       if (note != null) 'note': note,
       if (preferito != null) 'preferito': preferito,
       if (synced != null) 'synced': synced,
+      if (deletedAt != null) 'deleted_at': deletedAt,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -1364,6 +1438,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
       Value<String?>? note,
       Value<bool>? preferito,
       Value<bool>? synced,
+      Value<DateTime?>? deletedAt,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -1376,6 +1451,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
       note: note ?? this.note,
       preferito: preferito ?? this.preferito,
       synced: synced ?? this.synced,
+      deletedAt: deletedAt ?? this.deletedAt,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -1409,6 +1485,9 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
     if (synced.present) {
       map['synced'] = Variable<bool>(synced.value);
     }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -1432,6 +1511,7 @@ class SpotsCompanion extends UpdateCompanion<Spot> {
           ..write('note: $note, ')
           ..write('preferito: $preferito, ')
           ..write('synced: $synced, ')
+          ..write('deletedAt: $deletedAt, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -1937,6 +2017,7 @@ typedef $$FishingSessionsTableCreateCompanionBuilder = FishingSessionsCompanion
   Value<String?> condizioni,
   Value<String?> faseLunare,
   Value<bool> synced,
+  Value<DateTime?> deletedAt,
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<int> rowid,
@@ -1961,6 +2042,7 @@ typedef $$FishingSessionsTableUpdateCompanionBuilder = FishingSessionsCompanion
   Value<String?> condizioni,
   Value<String?> faseLunare,
   Value<bool> synced,
+  Value<DateTime?> deletedAt,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -2029,6 +2111,9 @@ class $$FishingSessionsTableFilterComposer
 
   ColumnFilters<bool> get synced => $composableBuilder(
       column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -2101,6 +2186,9 @@ class $$FishingSessionsTableOrderingComposer
   ColumnOrderings<bool> get synced => $composableBuilder(
       column: $table.synced, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -2171,6 +2259,9 @@ class $$FishingSessionsTableAnnotationComposer
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -2223,6 +2314,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             Value<String?> condizioni = const Value.absent(),
             Value<String?> faseLunare = const Value.absent(),
             Value<bool> synced = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -2246,6 +2338,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             condizioni: condizioni,
             faseLunare: faseLunare,
             synced: synced,
+            deletedAt: deletedAt,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -2269,6 +2362,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             Value<String?> condizioni = const Value.absent(),
             Value<String?> faseLunare = const Value.absent(),
             Value<bool> synced = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
             Value<int> rowid = const Value.absent(),
@@ -2292,6 +2386,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             condizioni: condizioni,
             faseLunare: faseLunare,
             synced: synced,
+            deletedAt: deletedAt,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -2327,6 +2422,7 @@ typedef $$SpotsTableCreateCompanionBuilder = SpotsCompanion Function({
   Value<String?> note,
   Value<bool> preferito,
   Value<bool> synced,
+  Value<DateTime?> deletedAt,
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<int> rowid,
@@ -2340,6 +2436,7 @@ typedef $$SpotsTableUpdateCompanionBuilder = SpotsCompanion Function({
   Value<String?> note,
   Value<bool> preferito,
   Value<bool> synced,
+  Value<DateTime?> deletedAt,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -2376,6 +2473,9 @@ class $$SpotsTableFilterComposer extends Composer<_$AppDatabase, $SpotsTable> {
 
   ColumnFilters<bool> get synced => $composableBuilder(
       column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -2417,6 +2517,9 @@ class $$SpotsTableOrderingComposer
   ColumnOrderings<bool> get synced => $composableBuilder(
       column: $table.synced, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -2457,6 +2560,9 @@ class $$SpotsTableAnnotationComposer
   GeneratedColumn<bool> get synced =>
       $composableBuilder(column: $table.synced, builder: (column) => column);
 
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
 
@@ -2495,6 +2601,7 @@ class $$SpotsTableTableManager extends RootTableManager<
             Value<String?> note = const Value.absent(),
             Value<bool> preferito = const Value.absent(),
             Value<bool> synced = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -2508,6 +2615,7 @@ class $$SpotsTableTableManager extends RootTableManager<
             note: note,
             preferito: preferito,
             synced: synced,
+            deletedAt: deletedAt,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -2521,6 +2629,7 @@ class $$SpotsTableTableManager extends RootTableManager<
             Value<String?> note = const Value.absent(),
             Value<bool> preferito = const Value.absent(),
             Value<bool> synced = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
             Value<int> rowid = const Value.absent(),
@@ -2534,6 +2643,7 @@ class $$SpotsTableTableManager extends RootTableManager<
             note: note,
             preferito: preferito,
             synced: synced,
+            deletedAt: deletedAt,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,

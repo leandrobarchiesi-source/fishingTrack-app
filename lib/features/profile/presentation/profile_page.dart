@@ -6,6 +6,8 @@ import '../../../core/app_settings.dart';
 import '../../../core/t.dart';
 import '../../../core/restart_widget.dart';
 import '../../../database/app_database.dart';
+import '../../../services/connectivity_service.dart';
+
 
 class ProfilePage extends StatefulWidget {
   final AppDatabase database;
@@ -27,6 +29,8 @@ class _ProfilePageState extends State<ProfilePage> {
 
   bool loading = true;
 
+  bool online = false;
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
 Future<void> caricaProfilo() async {
+  online = await ConnectivityService.isOnline();
   try {
     // 1. Cerca prima il profilo locale
     final locale = await widget.database.getProfile();
@@ -43,6 +48,7 @@ Future<void> caricaProfilo() async {
       nomeController.text = locale.nome ?? "";
       cognomeController.text = locale.cognome ?? "";
       lingua = locale.language;
+      AppSettings.language = locale.language;
 
       if (mounted) {
         setState(() {
@@ -107,20 +113,51 @@ Future<void> caricaProfilo() async {
       return;
     }
 
-    await Supabase.instance.client
-        .from(
-      'profiles',
-    )
-        .update({
+// 1. Aggiorna SQLite
+final locale = await widget.database.getProfile();
+
+if (locale != null) {
+  await widget.database.updateProfile(
+    Profile(
+      id: locale.id,
+      nome: nomeController.text,
+      cognome: cognomeController.text,
+      email: locale.email,
+      language: lingua,
+      avatar: locale.avatar,
+      synced: true,
+      createdAt: locale.createdAt,
+      updatedAt: DateTime.now().toUtc(),
+    ),
+  );
+}
+
+// 2. Aggiorna Supabase
+await Supabase.instance.client
+    .from('profiles')
+    .update({
       'nome': nomeController.text,
       'cognome': cognomeController.text,
       'language': lingua,
-    }).eq(
-      'id',
-      user.id,
-    );
+      'updated_at': DateTime.now().toUtc().toIso8601String(),
+    })
+    .eq('id', user.id);
 
-    AppSettings.language = lingua;
+    await widget.database.updateProfile(
+  Profile(
+    id: user.id,
+    nome: nomeController.text,
+    cognome: cognomeController.text,
+    email: user.email,
+    language: lingua,
+    avatar: null, // oppure il valore salvato se lo gestisci
+    synced: true,
+    createdAt: DateTime.now().toUtc(), // lo sistemiamo meglio dopo
+    updatedAt: DateTime.now().toUtc(),
+  ),
+);
+
+await AppSettings.saveLanguage(lingua);
 
     RestartWidget.restartApp(
       context,
@@ -264,11 +301,33 @@ Future<void> caricaProfilo() async {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(
-          16,
+  padding: const EdgeInsets.all(16),
+  children: [
+
+    if (!online)
+      Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.amber.shade100,
+          borderRadius: BorderRadius.circular(8),
         ),
-        children: [
-          const Center(
+        child: Row(
+          children: [
+            const Icon(Icons.cloud_off),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                T.profileViewOnlyOffline,
+              ),
+            ),
+          ],
+        ),
+      ),
+
+    if (!online)
+      const SizedBox(height: 20),
+                const Center(
             child: CircleAvatar(
               radius: 50,
               child: Icon(
@@ -280,18 +339,20 @@ Future<void> caricaProfilo() async {
           const SizedBox(
             height: 30,
           ),
-          TextField(
-            controller: nomeController,
-            decoration: InputDecoration(
+TextField(
+  controller: nomeController,
+  readOnly: !online,
+              decoration: InputDecoration(
               labelText: T.firstName,
             ),
           ),
           const SizedBox(
             height: 15,
           ),
-          TextField(
-            controller: cognomeController,
-            decoration: InputDecoration(
+TextField(
+  controller: cognomeController,
+  readOnly: !online,
+              decoration: InputDecoration(
               labelText: T.lastName,
             ),
           ),
@@ -329,43 +390,39 @@ Future<void> caricaProfilo() async {
                 ),
               ),
             ],
-            onChanged: (v) {
-              setState(() {
-                lingua = v!;
-              });
-            },
-          ),
+onChanged: online
+    ? (v) {
+        setState(() {
+          lingua = v!;
+        });
+      }
+    : null,          ),
           const SizedBox(
             height: 30,
           ),
-          ElevatedButton(
-            onPressed: () async {
-              try {
-                await salva();
-              } catch (e) {
-                if (!mounted) return;
+if (online)
+  ElevatedButton(
+    onPressed: () async {
+      try {
+        await salva();
+      } catch (e) {
+        if (!mounted) return;
 
-                ScaffoldMessenger.of(
-                  context,
-                ).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      T.onlineOnlyProfile,
-                    ),
-                  ),
-                );
-              }
-            },
-            child: Text(
-              T.saveProfile,
-            ),
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(T.onlineOnlyProfile),
           ),
-          const SizedBox(
+        );
+      }
+    },
+    child: Text(T.saveProfile),
+  ),
+            const SizedBox(
             height: 15,
           ),
           ElevatedButton.icon(
-            onPressed: cambiaPassword,
-            icon: const Icon(
+ onPressed: online ? cambiaPassword : null,
+             icon: const Icon(
               Icons.lock,
             ),
             label: Text(

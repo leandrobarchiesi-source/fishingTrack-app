@@ -38,8 +38,12 @@ void initState() {
 }
 
 Future<void> aggiornaMeteoSeNecessario() async {
+  print("Controllo meteo per sessione ${session.id}");
+
   final aggiornato =
       await widget.database.completaMeteoSessione(session.id);
+
+  print("Meteo aggiornato? $aggiornato");
 
   if (!mounted || !aggiornato) {
     return;
@@ -56,11 +60,10 @@ Future<void> aggiornaMeteoSeNecessario() async {
 
   ScaffoldMessenger.of(context).showSnackBar(
     SnackBar(
-      content: Text(T.weatherUpdated)
+      content: Text(T.weatherUpdated),
     ),
   );
 }
-
   String formatDate(DateTime d) {
     return "${d.day.toString().padLeft(2, '0')}/"
         "${d.month.toString().padLeft(2, '0')}/"

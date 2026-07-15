@@ -39,55 +39,10 @@ double initialZoom = 15.5;
   void initState() {
     super.initState();
     carica();
-    Future<void> centraMappa() async {
-  try {
-    final posizione = await Geolocator.getCurrentPosition();
 
-    if (!mounted) return;
-
-    mapController.move(
-      LatLng(
-        posizione.latitude,
-        posizione.longitude,
-      ),
-      15.5,
-    );
-
-    return;
-  } catch (_) {
-    // GPS non disponibile
-  }
-
-  if (spots.isNotEmpty) {
-    mapController.move(
-      LatLng(
-        spots.first.latitudine!,
-        spots.first.longitudine!,
-      ),
-      13,
-    );
-  }
-}
   }
   
 Future<void> centraMappa() async {
-  try {
-    final posizione = await Geolocator.getCurrentPosition();
-
-    initialCenter = LatLng(
-      posizione.latitude,
-      posizione.longitude,
-    );
-
-    initialZoom = 15.5;
-
-    if (mounted) {
-      setState(() {});
-    }
-
-    return;
-  } catch (_) {}
-
   if (spots.isNotEmpty) {
     initialCenter = LatLng(
       spots.first.latitudine!,
@@ -95,36 +50,34 @@ Future<void> centraMappa() async {
     );
 
     initialZoom = 13;
+  } else {
+    initialCenter = const LatLng(
+      41.8719,
+      12.5674,
+    );
 
-    if (mounted) {
-      setState(() {});
-    }
-
-    return;
+    initialZoom = 5.8;
   }
-
-  initialCenter = const LatLng(
-    41.8719,
-    12.5674,
-  );
-
-  initialZoom = 5.8;
 
   if (mounted) {
     setState(() {});
   }
 }
 
-  Future<void> carica() async {
-final data = await repository.getAllSpots();
-    if (!mounted) return;
+Future<void> carica({bool centra = true}) async {
+  final data = await repository.getAllSpots();
 
-setState(() {
-  spots = data;
-});
+  if (!mounted) return;
 
-await centraMappa();
+  setState(() {
+    spots = data;
+  });
+
+  if (centra) {
+    await centraMappa();
+    adattaMappaAgliSpot();
   }
+}
 
 Future<void> salvaModificaSpot() async {
   if (selectedSpot == null || posizioneModificata == null) {
@@ -150,52 +103,101 @@ Future<void> salvaModificaSpot() async {
   });
 }
 
-  Future<void> eliminaSpot() async {
-    if (selectedSpot == null) return;
+void adattaMappaAgliSpot() {
+  if (spots.isEmpty) return;
 
-    final sessioni = await database.getAllSessions();
+  final bounds = LatLngBounds.fromPoints(
+    spots
+        .map(
+          (s) => LatLng(
+            s.latitudine!,
+            s.longitudine!,
+          ),
+        )
+        .toList(),
+  );
 
-    final associate = sessioni.where(
-      (s) => s.spotId == selectedSpot!.id,
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    if (!mounted) return;
+
+    await Future.delayed(
+      const Duration(milliseconds: 150),
     );
-
-    if (associate.isNotEmpty) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(
-        SnackBar(
-          content: Text(T.spotLinkedSessions(
-            associate.length,
-          )),
-        ),
-      );
-
-      return;
-    }
-
-    await repository.deleteSpot(
-      selectedSpot!.id,
-    );
-
-    await carica();
 
     if (!mounted) return;
 
-    setState(() {
-      selectedSpot = null;
-    });
+    try {
+      mapController.fitCamera(
+        CameraFit.bounds(
+          bounds: bounds,
+          padding: const EdgeInsets.all(60),
+        ),
+      );
+    } catch (e) {
+      debugPrint("Map non pronta: $e");
+    }
+  });
+}
 
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(
-      SnackBar(
-        content: Text(T.spotDeleted),
-      ),
-    );
+Future<bool> eliminaSpot() async {
+  final sw = Stopwatch()..start();
+
+  print("Inizio eliminaSpot");
+
+  if (selectedSpot == null) {
+    return false;
   }
 
+  final sessioni = await database.getAllSessions();
+
+  final associate = sessioni.where(
+    (s) => s.spotId == selectedSpot!.id,
+  );
+
+  if (associate.isNotEmpty) {
+    if (!mounted) return false;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          T.spotLinkedSessions(
+            associate.length,
+          ),
+        ),
+      ),
+    );
+
+    return false;
+  }
+
+  await repository.deleteSpot(
+    selectedSpot!.id,
+  );
+
+  print("Delete SQLite: ${sw.elapsedMilliseconds} ms");
+
+  if (!mounted) {
+    return false;
+  }
+
+  setState(() {
+    selectedSpot = null;
+  });
+
+await carica(centra: false);
+
+  print("Carica: ${sw.elapsedMilliseconds} ms");
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(T.spotDeleted),
+    ),
+  );
+
+  print("Fine eliminaSpot: ${sw.elapsedMilliseconds} ms");
+
+  return true;
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -318,9 +320,9 @@ labelText: T.spotName,
                   ),
                 ),
 onPressed: () async {
-  await eliminaSpot();
+  final eliminato = await eliminaSpot();
 
-  if (mounted) {
+  if (eliminato && mounted) {
     Navigator.pop(context);
   }
 },

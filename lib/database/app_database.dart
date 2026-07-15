@@ -1,9 +1,5 @@
-import 'dart:io';
 
 import 'package:drift/drift.dart';
-import 'package:drift/native.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/wheater/weather_service.dart';
 import 'package:geolocator/geolocator.dart';
@@ -11,6 +7,9 @@ import 'tables/fishing_sessions.dart';
 import 'tables/spots.dart';
 import 'tables/profiles.dart';
 import 'nearby_spot_result.dart';
+import '/core/app_settings.dart';
+import 'database_connection.dart';
+import 'migrations.dart';
 
 part 'app_database.g.dart';
 
@@ -21,119 +20,25 @@ part 'app_database.g.dart';
     Profiles,
   ],
 )
+@DriftDatabase(
+  tables: [
+    FishingSessions,
+    Spots,
+    Profiles,
+  ],
+)
 class AppDatabase extends _$AppDatabase {
   AppDatabase()
       : super(
-          _openConnection(),
+          openConnection(),
         );
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
-  MigrationStrategy get migration => MigrationStrategy(
-        onUpgrade: (
-          Migrator m,
-          int from,
-          int to,
-        ) async {
-          if (from < 2) {
-            await m.addColumn(
-              fishingSessions,
-              fishingSessions.synced,
-            );
-          }
+  MigrationStrategy get migration => buildMigration(this);
 
-          if (from < 3) {
-            await m.createTable(
-              spots,
-            );
-          }
-
-          if (from < 4) {
-            await m.addColumn(
-              fishingSessions,
-              fishingSessions.spotId,
-            );
-          }
-
-          if (from < 5) {
-            await m.addColumn(
-              spots,
-              spots.synced,
-            );
-          }
-          if (from < 6) {
-            await m.addColumn(
-              fishingSessions,
-              fishingSessions.temperaturaAcqua,
-            );
-          }
-          if (from < 7) {
-  await m.createTable(profiles);
-}
-        },
-      );
-
-Future<List<Spot>> getAllSpots() async {
-  final user = Supabase.instance.client.auth.currentUser;
-
-  if (user == null) {
-    return [];
-  }
-
-  return (select(spots)
-        ..where((t) => t.userId.equals(user.id)))
-      .get();
-}
-
-Future<NearbySpotResult> findNearestSpot({
-  required double latitude,
-  required double longitude,
-  double maxDistanceMeters = 20,
-}) async {
-    final allSpots = await getAllSpots();
-
-  Spot? nearestSpot;
-  double nearestDistance = maxDistanceMeters;
-
-  for (final spot in allSpots) {
-    if (spot.latitudine == null || spot.longitudine == null) {
-      continue;
-    }
-
-    final distance = Geolocator.distanceBetween(
-      latitude,
-      longitude,
-      spot.latitudine!,
-      spot.longitudine!,
-    );
-print(
-  'Spot: ${spot.nome} - distanza: ${distance.toStringAsFixed(2)} m',
-);
-
-
-    if (distance < nearestDistance) {
-      nearestDistance = distance;
-      nearestSpot = spot;
-    }
-  }
-
-  if (nearestSpot != null) {
-  print(
-    'Scelto: ${nearestSpot.nome}',
-  );
-} else {
-  print(
-    'Nessuno spot trovato entro $maxDistanceMeters m',
-  );
-}
-
-return NearbySpotResult(
-  spot: nearestSpot,
-  distance: nearestSpot == null ? null : nearestDistance,
-);
-}
 
 Future<List<FishingSession>> getAllSessions() async {
   final user = Supabase.instance.client.auth.currentUser;
@@ -143,34 +48,25 @@ Future<List<FishingSession>> getAllSessions() async {
   }
 
   return (select(fishingSessions)
-        ..where((t) => t.userId.equals(user.id)))
+        ..where((t) => t.userId.equals(user.id) & t.deletedAt.isNull()))
       .get();
 }
 
-  Future<FishingSession?> getSessionById(String id) async {
-      final user = Supabase.instance.client.auth.currentUser;
+Future<FishingSession?> getSessionById(String id) async {
+  final user = Supabase.instance.client.auth.currentUser;
 
   if (user == null) {
     return null;
   }
 
   return (select(fishingSessions)
-..where((t) => t.userId.equals(user.id)))
+        ..where((t) => t.id.equals(id))
+        ..where((t) => t.userId.equals(user.id)))
       .getSingleOrNull();
 }
 
-  Future<void> insertSpot(
-    SpotsCompanion spot,
-  ) async {
-    await into(
-      spots,
-    ).insert(
-      spot.copyWith(
-        synced: const Value(false),
-      ),
-      mode: InsertMode.insertOrReplace,
-    );
-  }
+
+
 
   Future<void> insertSession(
     FishingSessionsCompanion session,
@@ -188,19 +84,17 @@ Future<List<FishingSession>> getAllSessions() async {
 
   }
 
-  Future<void> deleteSession(
-    String id,
-  ) async {
-    await (delete(
-      fishingSessions,
-    )..where(
-            (tbl) => tbl.id.equals(
-              id,
-            ),
-          ))
-        .go();
-
-  }
+Future<void> deleteSession(String id) async {
+  await (update(fishingSessions)
+        ..where((t) => t.id.equals(id)))
+      .write(
+    FishingSessionsCompanion(
+      deletedAt: Value(DateTime.now().toUtc()),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
 
   Future<void> updateSession(
     FishingSession session,
@@ -266,9 +160,6 @@ Future<List<FishingSession>> getAllSessions() async {
       ),
     );
 
-    print(
-      session.id,
-    );
   }
 
   Future<bool> completaMeteoSessione(String id) async {
@@ -277,6 +168,7 @@ Future<List<FishingSession>> getAllSessions() async {
       .getSingleOrNull();
 
   if (sessione == null) return false;
+
 
   if (sessione.latitudine == null || sessione.longitudine == null) {
     return false;
@@ -315,61 +207,79 @@ Future<List<FishingSession>> getAllSessions() async {
   }
 }
 
-  Future<void> syncPendingSessions() async {
+Future<void> syncDeletedSessions() async {
+  final deleted = await (select(fishingSessions)
+        ..where((t) => t.deletedAt.isNotNull()))
+      .get();
+
+  for (final s in deleted) {
     try {
-      final pending = await (select(
-        fishingSessions,
-      )..where(
-              (t) => t.synced.equals(
-                false,
-              ),
-            ))
-          .get();
+      await Supabase.instance.client
+          .from('fishing_sessions')
+          .delete()
+          .eq('id', s.id);
 
-      for (final s in pending) {
-        await Supabase.instance.client
-            .from(
-          'fishing_sessions',
-        )
-            .upsert({
-          'id': s.id,
-          'user_id': s.userId,
-          'spot_id': s.spotId,
-          'luogo': s.luogo,
-          'tipo_pescata': s.tipoPescata,
-          'data': s.data.toIso8601String(),
-          'ora_inizio': s.oraInizio.toIso8601String(),
-          'ora_fine': s.oraFine.toIso8601String(),
-          'latitudine': s.latitudine,
-          'longitudine': s.longitudine,
-          'temperatura': s.temperatura,
-          'temperatura_acqua': s.temperaturaAcqua,
-          'pressione': s.pressione,
-          'vento': s.vento,
-          'condizioni': s.condizioni,
-          'fase_lunare': s.faseLunare,
-          'note': s.note,
-          'created_at': s.createdAt.toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        });
-
-        await (update(
-          fishingSessions,
-        )..where(
-                (t) => t.id.equals(
-                  s.id,
-                ),
-              ))
-            .write(
-          const FishingSessionsCompanion(
-            synced: Value(
-              true,
-            ),
-          ),
-        );
-      }
-    } catch (e) {}
+      await (delete(fishingSessions)
+            ..where((t) => t.id.equals(s.id)))
+          .go();
+    } catch (e) {
+      print("Errore eliminazione sessione: $e");
+    }
   }
+}
+
+Future<void> syncPendingSessions() async {
+  print(">>> syncPendingSessions()");
+  try {
+    final pending = await (select(
+      fishingSessions,
+    )..where(
+            (t) => t.synced.equals(false),
+          ))
+        .get();
+print("Sessioni da sincronizzare: ${pending.length}");
+    for (final s in pending) {
+      // Sessione eliminata localmente
+
+      // Inserimento / aggiornamento
+      await Supabase.instance.client
+          .from('fishing_sessions')
+          .upsert({
+        'id': s.id,
+        'user_id': s.userId,
+        'spot_id': s.spotId,
+        'luogo': s.luogo,
+        'tipo_pescata': s.tipoPescata,
+        'data': s.data.toIso8601String(),
+        'ora_inizio': s.oraInizio.toIso8601String(),
+        'ora_fine': s.oraFine.toIso8601String(),
+        'latitudine': s.latitudine,
+        'longitudine': s.longitudine,
+        'temperatura': s.temperatura,
+        'temperatura_acqua': s.temperaturaAcqua,
+        'pressione': s.pressione,
+        'vento': s.vento,
+        'condizioni': s.condizioni,
+        'fase_lunare': s.faseLunare,
+        'note': s.note,
+        'created_at': s.createdAt.toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+      await (update(fishingSessions)
+            ..where((t) => t.id.equals(s.id)))
+          .write(
+        const FishingSessionsCompanion(
+          synced: Value(true),
+        ),
+      );
+    }
+} catch (e, st) {
+  print("ERRORE syncPendingSessions");
+  print(e);
+  print(st);
+}
+}
 
   Future<void> downloadProfile() async {
   final user = Supabase.instance.client.auth.currentUser;
@@ -385,123 +295,136 @@ Future<List<FishingSession>> getAllSessions() async {
         .eq('id', user.id)
         .single();
 
-    await saveProfile(
-      ProfilesCompanion.insert(
-        id: user.id,
-        nome: Value(remoto['nome']),
-        cognome: Value(remoto['cognome']),
-        email: Value(user.email),
-        language: remoto['language'] ?? 'it',
-        avatar: Value(remoto['avatar']),
-        synced: const Value(true),
-        createdAt: DateTime.parse(remoto['created_at']),
-        updatedAt: DateTime.parse(remoto['updated_at']),
-      ),
-    );
+await saveProfile(
+  ProfilesCompanion.insert(
+    id: user.id,
+    nome: Value(remoto['nome']),
+    cognome: Value(remoto['cognome']),
+    email: Value(user.email),
+    language: Value(remoto['language'] ?? 'it'),
+    avatar: Value(remoto['avatar']),
+    synced: const Value(true),
+    createdAt: DateTime.parse(remoto['created_at']),
+    updatedAt: DateTime.parse(remoto['updated_at']),
+  ),
+);
+
+await AppSettings.saveLanguage(
+  (remoto['language'] as String?) ?? 'it',
+);
+
+    print("Profilo salvato in SQLite");
   } catch (e) {
     print("Errore download profilo: $e");
   }
-      print("profilo scaricato");
+
 
 }
 
-  Future<void> syncFromSupabase() async {
-    final user = Supabase.instance.client.auth.currentUser;
+Future<void> syncFromSupabase() async {
+  final user = Supabase.instance.client.auth.currentUser;
 
-    if (user == null) {
-      return;
-    }
-
-    try {
-      final data = await Supabase.instance.client
-          .from(
-            'fishing_sessions',
-          )
-          .select()
-          .eq(
-            'user_id',
-            user.id,
-          );
-
-      for (final item in data) {
-        final locale = await (select(
-          fishingSessions,
-        )..where(
-                (t) => t.id.equals(
-                  item['id'],
-                ),
-              ))
-            .getSingleOrNull();
-
-        if (locale != null && locale.synced == false) {
-          continue;
-        }
-
-        final cloudSession = FishingSessionsCompanion.insert(
-          id: item['id'],
-          userId: item['user_id'],
-          spotId: Value(
-            item['spot_id'],
-          ),
-          luogo: item['luogo'],
-          tipoPescata: item['tipo_pescata'],
-          data: DateTime.parse(
-            item['data'],
-          ),
-          oraInizio: DateTime.parse(
-            item['ora_inizio'],
-          ),
-          oraFine: DateTime.parse(
-            item['ora_fine'],
-          ),
-          latitudine: Value(
-            (item['latitudine'] as num?)?.toDouble(),
-          ),
-          longitudine: Value(
-            (item['longitudine'] as num?)?.toDouble(),
-          ),
-          temperatura: Value(
-            (item['temperatura'] as num?)?.toDouble(),
-          ),
-          temperaturaAcqua: Value(
-            (item['temperatura_acqua'] as num?)?.toDouble(),
-          ),
-          pressione: Value(
-            (item['pressione'] as num?)?.toDouble(),
-          ),
-          vento: Value(
-            item['vento'],
-          ),
-          condizioni: Value(
-            item['condizioni'],
-          ),
-          faseLunare: Value(
-            item['fase_lunare'],
-          ),
-          note: Value(
-            item['note'],
-          ),
-          synced: const Value(
-            true,
-          ),
-          createdAt: DateTime.parse(
-            item['created_at'],
-          ),
-          updatedAt: DateTime.parse(
-            item['updated_at'],
-          ),
-        );
-
-        await into(
-          fishingSessions,
-        ).insert(
-          cloudSession,
-          mode: InsertMode.insertOrReplace,
-        );
-      }
-    } catch (e) {}
+  if (user == null) {
+    return;
   }
 
+  try {
+    final data = await Supabase.instance.client
+        .from('fishing_sessions')
+        .select()
+        .eq('user_id', user.id);
+
+    for (final item in data) {
+      final locale = await (select(
+        fishingSessions,
+      )..where(
+              (t) => t.id.equals(item['id']),
+            ))
+          .getSingleOrNull();
+
+      print("========== SESSIONE ==========");
+      print("ID: ${item['id']}");
+      print("Cloud updated : ${item['updated_at']}");
+      print("Locale updated: ${locale?.updatedAt}");
+      print("Cloud luogo   : ${item['luogo']}");
+      print("Locale luogo  : ${locale?.luogo}");
+      print("=============================");
+
+      if (locale != null) {
+        final remoto = DateTime.parse(
+          item['updated_at'],
+        ).toUtc();
+
+        final localeTime = locale.updatedAt.toUtc();
+
+        print("Cloud UTC : $remoto");
+        print("Locale UTC: $localeTime");
+
+        if (localeTime.millisecondsSinceEpoch >
+            remoto.millisecondsSinceEpoch) {
+          print("SKIP DOWNLOAD - Locale più recente");
+          continue;
+        }
+      }
+
+      print("DOWNLOAD DAL CLOUD");
+
+      final cloudSession = FishingSessionsCompanion.insert(
+        id: item['id'],
+        userId: item['user_id'],
+        spotId: Value(item['spot_id']),
+        luogo: item['luogo'],
+        tipoPescata: item['tipo_pescata'],
+        data: DateTime.parse(item['data']),
+        oraInizio: DateTime.parse(item['ora_inizio']),
+        oraFine: DateTime.parse(item['ora_fine']),
+        latitudine: Value(
+          (item['latitudine'] as num?)?.toDouble(),
+        ),
+        longitudine: Value(
+          (item['longitudine'] as num?)?.toDouble(),
+        ),
+        temperatura: Value(
+          (item['temperatura'] as num?)?.toDouble(),
+        ),
+        temperaturaAcqua: Value(
+          (item['temperatura_acqua'] as num?)?.toDouble(),
+        ),
+        pressione: Value(
+          (item['pressione'] as num?)?.toDouble(),
+        ),
+        vento: Value(item['vento']),
+        condizioni: Value(item['condizioni']),
+        faseLunare: Value(item['fase_lunare']),
+        note: Value(item['note']),
+        synced: const Value(true),
+        createdAt: DateTime.parse(item['created_at']),
+        updatedAt: DateTime.parse(item['updated_at']),
+      );
+
+      await into(
+        fishingSessions,
+      ).insert(
+        cloudSession,
+        mode: InsertMode.insertOrReplace,
+      );
+
+      final verifica = await (select(
+        fishingSessions,
+      )..where(
+              (t) => t.id.equals(item['id']),
+            ))
+          .getSingleOrNull();
+
+      print("----- SQLITE DOPO INSERT -----");
+      print("Luogo      : ${verifica?.luogo}");
+      print("Updated_at : ${verifica?.updatedAt}");
+      print("------------------------------");
+    }
+  } catch (e) {
+    print("Errore download sessioni: $e");
+  }
+}
   Future<void> syncSpotsFromSupabase() async {
     final user = Supabase.instance.client.auth.currentUser;
 
@@ -533,15 +456,28 @@ Future<List<FishingSession>> getAllSessions() async {
                 ),
               ))
             .getSingleOrNull();
+            
 
-        if (locale != null && locale.synced == false) {
-          print(
-            "Spot locale modificato -> skip",
-          );
+if (locale != null) {
+  
+final remoto = DateTime.parse(
+  s['updated_at'],
+).toUtc();
 
-          continue;
-        }
+final localeTime = locale?.updatedAt.toUtc();
 
+print("Cloud UTC : $remoto");
+print("Locale UTC: $localeTime");
+  // Il record locale è più recente:
+  // non sovrascriverlo, verrà inviato al cloud.
+  if (locale.updatedAt.isAfter(remoto)) {
+    print(
+      "Spot locale più recente -> skip download",
+    );
+
+    continue;
+  }
+}
         await into(
           spots,
         ).insert(
@@ -579,9 +515,6 @@ Future<List<FishingSession>> getAllSessions() async {
         );
       }
 
-      final tutti = await select(
-        spots,
-      ).get();
     } catch (e) {
       print(
         "Errore sync spot: $e",
@@ -589,53 +522,69 @@ Future<List<FishingSession>> getAllSessions() async {
     }
   }
 
-  Future<void> syncPendingSpots() async {
+Future<void> syncDeletedSpots() async {
+  final deleted = await (select(spots)
+        ..where((t) => t.deletedAt.isNotNull()))
+      .get();
+
+  for (final s in deleted) {
     try {
-      final pending = await (select(
-        spots,
-      )..where(
-              (t) => t.synced.equals(
-                false,
-              ),
-            ))
-          .get();
+      await Supabase.instance.client
+          .from('spots')
+          .delete()
+          .eq('id', s.id);
 
-      print(
-        pending.length,
-      );
-
-      for (final s in pending) {
-        await Supabase.instance.client
-            .from(
-          'spots',
-        )
-            .upsert({
-          'id': s.id,
-          'user_id': s.userId,
-          'nome': s.nome,
-          'latitudine': s.latitudine,
-          'longitudine': s.longitudine,
-          'created_at': s.createdAt.toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        });
-
-        await (update(
-          spots,
-        )..where(
-                (t) => t.id.equals(
-                  s.id,
-                ),
-              ))
-            .write(
-          const SpotsCompanion(
-            synced: Value(
-              true,
-            ),
-          ),
-        );
-      }
-    } catch (e) {}
+      await (delete(spots)
+            ..where((t) => t.id.equals(s.id)))
+          .go();
+    } catch (e) {
+      print("Errore eliminazione spot: $e");
+    }
   }
+}
+
+Future<void> syncPendingSpots() async {
+  print(">>> syncPendingSpots()");
+  try {
+    final pending = await (select(
+      spots,
+    )..where(
+            (t) => t.synced.equals(false),
+          ))
+        .get();
+
+    for (final s in pending) {
+      // Spot eliminato localmente
+print("========== SYNC SPOT ==========");
+print("Spot: ${s.nome}");
+print("userId SQLite : ${s.userId}");
+print("auth.uid()    : ${Supabase.instance.client.auth.currentUser?.id}");
+print("================================");
+      // Inserimento / aggiornamento
+      await Supabase.instance.client
+          .from('spots')
+          .upsert({
+        'id': s.id,
+        'user_id': s.userId,
+        'nome': s.nome,
+        'latitudine': s.latitudine,
+        'longitudine': s.longitudine,
+        'created_at': s.createdAt.toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+      await (update(spots)
+            ..where((t) => t.id.equals(s.id)))
+          .write(
+        const SpotsCompanion(
+          synced: Value(true),
+        ),
+      );
+    }
+  } catch (e) {
+    print("Errore sync pending spots: $e");
+  }
+}
 
   Future<void> syncMissingWeather() async {
     try {
@@ -706,90 +655,6 @@ Future<List<FishingSession>> getAllSessions() async {
     } catch (e) {}
   }
 
-Future<int> getSpotCount() async {
-  final user = Supabase.instance.client.auth.currentUser;
-
-  if (user == null) {
-    return 0;
-  }
-
-  final data = await (select(spots)
-        ..where((t) => t.userId.equals(user.id)))
-      .get();
-
-  return data.length;
-}
-
-Future<Spot?> getSpotByNome(
-  String nome,
-) async {
-  final pulito = nome.trim();
-
-  final user = Supabase.instance.client.auth.currentUser;
-
-  if (user == null) {
-    return null;
-  }
-
-  // Cerca locale
-  final risultati = await (select(spots)
-        ..where(
-          (t) =>
-              t.userId.equals(user.id) &
-              t.nome.equals(pulito),
-        ))
-      .get();
-
-  final locale = risultati.isEmpty ? null : risultati.first;
-  if (locale != null) {
-    return locale;
-  }
-
-
-    try {
-      // Cerca Supabase
-      final remoto = await Supabase.instance.client
-          .from(
-            'spots',
-          )
-          .select()
-          .eq(
-            'user_id',
-            Supabase.instance.client.auth.currentUser!.id,
-          )
-          .eq(
-            'nome',
-            pulito,
-          )
-          .maybeSingle();
-
-      if (remoto == null) {
-        return null;
-      }
-
-      // restituisce direttamente lo spot dal cloud
-      // senza reinserirlo localmente
-
-      return Spot(
-        id: remoto['id'],
-        userId: remoto['user_id'],
-        nome: remoto['nome'],
-        latitudine: (remoto['latitudine'] as num?)?.toDouble(),
-        longitudine: (remoto['longitudine'] as num?)?.toDouble(),
-        note: remoto['note'],
-        preferito: remoto['preferito'] ?? false,
-        synced: true,
-        createdAt: DateTime.parse(
-          remoto['created_at'],
-        ),
-        updatedAt: DateTime.parse(
-          remoto['updated_at'],
-        ),
-      );
-    } catch (e) {
-      return null;
-    }
-  }
 
   Future<Profile?> getProfile() async {
   final user = Supabase.instance.client.auth.currentUser;
@@ -820,7 +685,7 @@ Future<void> updateProfile(Profile profile) async {
       email: Value(profile.email),
       language: Value(profile.language),
       avatar: Value(profile.avatar),
-      synced: const Value(false),
+      synced: Value(profile.synced),
       updatedAt: Value(DateTime.now().toUtc()),
     ),
   );
@@ -907,47 +772,126 @@ Future<void> updateProfile(Profile profile) async {
     );
   }
 
-  Future<void> deleteSpot(
-    String id,
-  ) async {
-    await (delete(
-      spots,
-    )..where(
-            (t) => t.id.equals(
-              id,
-            ),
-          ))
-        .go();
-
-    try {
-      await Supabase.instance.client
-          .from(
-            'spots',
-          )
-          .delete()
-          .eq(
-            'id',
-            id,
-          );
-    } catch (e) {}
-  }
+Future<void> deleteSpot(String id) async {
+  await (update(spots)
+        ..where((t) => t.id.equals(id)))
+      .write(
+    SpotsCompanion(
+      deletedAt: Value(DateTime.now().toUtc()),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
 }
 
-LazyDatabase _openConnection() {
-  return LazyDatabase(
-    () async {
-      final dbFolder = await getApplicationDocumentsDirectory();
+Future<List<Spot>> getAllSpots() async {
+  final user = Supabase.instance.client.auth.currentUser;
 
-      final file = File(
-        p.join(
-          dbFolder.path,
-          'fishing_app.sqlite',
-        ),
-      );
+  if (user == null) {
+    return [];
+  }
 
-      return NativeDatabase(
-        file,
-      );
-    },
+  return (select(spots)
+      ..where((t) =>
+          t.userId.equals(user.id) &
+          t.deletedAt.isNull()))
+    .get();
+    }
+
+Future<NearbySpotResult> findNearestSpot({
+  required double latitude,
+  required double longitude,
+  double maxDistanceMeters = 20,
+}) async {
+    final allSpots = await getAllSpots();
+
+  Spot? nearestSpot;
+  double nearestDistance = maxDistanceMeters;
+
+  for (final spot in allSpots) {
+    if (spot.latitudine == null || spot.longitudine == null) {
+      continue;
+    }
+
+    final distance = Geolocator.distanceBetween(
+      latitude,
+      longitude,
+      spot.latitudine!,
+      spot.longitudine!,
+    );
+print(
+  'Spot: ${spot.nome} - distanza: ${distance.toStringAsFixed(2)} m',
+);
+
+
+    if (distance < nearestDistance) {
+      nearestDistance = distance;
+      nearestSpot = spot;
+    }
+  }
+
+  if (nearestSpot != null) {
+  print(
+    'Scelto: ${nearestSpot.nome}',
   );
+} else {
+  print(
+    'Nessuno spot trovato entro $maxDistanceMeters m',
+  );
+}
+
+return NearbySpotResult(
+  spot: nearestSpot,
+  distance: nearestSpot == null ? null : nearestDistance,
+);
+}
+
+  Future<void> insertSpot(
+    SpotsCompanion spot,
+  ) async {
+    await into(
+      spots,
+    ).insert(
+      spot.copyWith(
+        synced: const Value(false),
+      ),
+      mode: InsertMode.insertOrReplace,
+    );
+  }
+
+Future<int> getSpotCount() async {
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return 0;
+  }
+
+  final data = await (select(spots)
+        ..where((t) => t.userId.equals(user.id)&t.deletedAt.isNull()))
+        
+      .get();
+
+  return data.length;
+}
+
+Future<Spot?> getSpotByNome(String nome) async {
+  final pulito = nome.trim();
+
+  final user = Supabase.instance.client.auth.currentUser;
+
+  if (user == null) {
+    return null;
+  }
+
+  final risultati = await (select(spots)
+        ..where(
+          (t) =>
+              t.userId.equals(user.id) &
+              t.nome.equals(pulito),
+        ))
+      .get();
+
+  return risultati.isEmpty ? null : risultati.first;
+}
+
 }

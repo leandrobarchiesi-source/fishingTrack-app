@@ -5,9 +5,7 @@ import 'database/app_database.dart';
 import 'features/auth/presentation/login_page.dart';
 import 'features/sessions/presentation/new_session_page.dart';
 import 'features/sessions/presentation/session_detail_page.dart';
-import 'widgets/supabase_status_widget.dart';
 import 'services/profile_service.dart';
-import 'features/language/presentation/language_page.dart';
 import 'features/profile/presentation/profile_page.dart';
 import 'features/spots/presentation/spots_page.dart';
 import 'services/connectivity_service.dart';
@@ -16,6 +14,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/t.dart';
 import 'core/restart_widget.dart';
 import 'features/auth/presentation/splash_page.dart';
+import 'core/app_settings.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,6 +24,8 @@ void main() async {
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2a3pta2tlY3dibWltYnZja3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MTcwODksImV4cCI6MjA5NDI5MzA4OX0.6IsjDm5egHBpDw04Z5CUvNGGUKeCY3BGtpJIyhy1qXg',
   );
+
+await AppSettings.load();
 
   print(
     "SESSIONE AVVIO:",
@@ -78,6 +79,8 @@ class _HomePageState extends State<HomePage> {
 
   StreamSubscription? connectivitySubscription;
 
+  
+
   @override
   void initState() {
     super.initState();
@@ -86,7 +89,7 @@ class _HomePageState extends State<HomePage> {
 
     connectivitySubscription = Connectivity().onConnectivityChanged.listen(
       (result) async {
-        if (result != ConnectivityResult.none) {
+       if (result.contains(ConnectivityResult.none)) {
 
         }
       },
@@ -111,8 +114,7 @@ class _HomePageState extends State<HomePage> {
     );
 
     try {
-      spotCount = await database.getSpotCount();
-
+await refreshDashboard();
     } catch (e) {
       print(
         "Errore inizializzazione: $e",
@@ -128,30 +130,62 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Future<void> sincronizza() async {
-    try {
-      await database.syncPendingSessions();
-      await database.syncPendingSpots();
-      await database.syncFromSupabase();
-      await database.syncSpotsFromSupabase();
-      await database.syncMissingWeather();
-    } catch (e) {
-      print(
-        "Errore sync iniziale: $e",
-      );
-    }
+Future<void> sincronizza() async {
+  try {
+    // 1. Elimina prima le sessioni
+    await database.syncDeletedSessions();
 
-    // SEMPRE locale
-    spotCount = await database.getSpotCount();
+    // 2. Poi elimina gli spot
+    await database.syncDeletedSpots();
 
-    if (!mounted) return;
+    // 3. Carica/modifica gli spot
+    await database.syncPendingSpots();
 
-    setState(() {});
+    // 4. Carica/modifica le sessioni
+    await database.syncPendingSessions();
+
+    // 5. Scarica gli spot dal cloud
+    await database.syncSpotsFromSupabase();
+
+    // 6. Scarica le sessioni dal cloud
+    await database.syncFromSupabase();
+
+    // 7. Profilo
+    await database.downloadProfile();
+
+    // 8. Meteo
+    await database.syncMissingWeather();
+  } catch (e) {
+    print("Errore sincronizzazione: $e");
   }
+
+  // Aggiorna sempre la dashboard
+  await loadDashboardData();
+
+  if (!mounted) return;
+
+  setState(() {});
+}
 
   Future<List<FishingSession>> loadSessions() async {
     return database.getAllSessions();
   }
+
+Future<void> loadDashboardData() async {
+  spotCount = await database.getSpotCount();
+}
+
+Future<void> refreshDashboard() async {
+  try {
+    await loadDashboardData();
+  } catch (e) {
+    debugPrint("Errore refresh dashboard: $e");
+  }
+
+  if (!mounted) return;
+
+  setState(() {});
+}
 
   Future<void> logout() async {
     await Supabase.instance.client.auth.signOut();
@@ -225,11 +259,9 @@ Navigator.push(
             ),
           );
 
-          if (result == true) {
-            setState(
-              () {},
-            );
-          }
+if (result == true) {
+  await refreshDashboard();
+}
         },
         child: const Icon(
           Icons.add,
@@ -303,15 +335,17 @@ Navigator.push(
                           },
                         ),
                         GestureDetector(
-                            onTap: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const SpotsPage(),
-                                ),
-                              );
-                            },
-                            child: _boxStat(
+  onTap: () async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const SpotsPage(),
+      ),
+    );
+
+    await refreshDashboard();
+  },
+                              child: _boxStat(
                               Icons.place,
                               spotCount.toString(),
                               T.spots,
@@ -377,11 +411,9 @@ label: Text(T.sync),
                           ),
                         );
 
-                        if (result == true) {
-                          setState(
-                            () {},
-                          );
-                        }
+if (result == true) {
+  await refreshDashboard();
+}
                       },
                     ),
                   );

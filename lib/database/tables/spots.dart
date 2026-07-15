@@ -13,21 +13,17 @@ class Spots extends Table {
 
   TextColumn get note => text().nullable()();
 
-  BoolColumn get preferito => boolean().withDefault(
-        const Constant(false),
-      )();
+  BoolColumn get preferito => boolean().withDefault(const Constant(false),)();
 
   // SOLO LOCALE
-  BoolColumn get synced => boolean().withDefault(
-        const Constant(false),
-      )();
+  BoolColumn get synced => boolean().withDefault(const Constant(false),)();
+
+  DateTimeColumn get deletedAt => dateTime().nullable()();
 
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();
 
   @override
-  Set<Column> get primaryKey => {
-        id,
-      };
+  Set<Column> get primaryKey => {id,};
 }

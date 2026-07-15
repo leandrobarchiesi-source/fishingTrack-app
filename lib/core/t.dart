@@ -778,4 +778,18 @@ static String get positionFound => _tr(
       es: 'Sincronizar',
     );
 
+static String get offlineMode => _tr(
+  it: 'Modalità offline',
+  en: 'Offline mode',
+  fr: 'Mode hors ligne',
+  es: 'Modo sin conexión',
+);
+
+static String get profileViewOnlyOffline => _tr(
+  it: 'Il profilo può essere visualizzato ma non modificato.',
+  en: 'The profile can be viewed but cannot be edited.',
+  fr: 'Le profil peut être consulté mais ne peut pas être modifié.',
+  es: 'El perfil puede visualizarse, pero no modificarse.',
+);
+
 }
