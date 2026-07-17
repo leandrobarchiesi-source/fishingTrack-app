@@ -7,7 +7,6 @@ import '../../../database/app_database.dart';
 import '../../../services/connectivity_service.dart';
 import '../../../core/t.dart';
 import '../../../repository/spot_repository.dart';
-import 'package:geolocator/geolocator.dart';
 
 class SpotsPage extends StatefulWidget {
   const SpotsPage({super.key});

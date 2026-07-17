@@ -792,4 +792,81 @@ static String get profileViewOnlyOffline => _tr(
   es: 'El perfil puede visualizarse, pero no modificarse.',
 );
 
+static String get status => _tr(
+  it: 'Stato',
+  en: 'Status',
+  fr: 'État',
+  es: 'Estado',
+);
+
+static String get online => _tr(
+  it: 'Connesso',
+  en: 'Online',
+  fr: 'Connecté',
+  es: 'Conectado',
+);
+
+static String get offline => _tr(
+  it: 'Offline',
+  en: 'Offline',
+  fr: 'Hors ligne',
+  es: 'Sin conexión',
+);
+
+static String get lastSync => _tr(
+  it: 'Ultima sincronizzazione',
+  en: 'Last synchronization',
+  fr: 'Dernière synchronisation',
+  es: 'Última sincronización',
+);
+
+static String get never => _tr(
+  it: 'Mai',
+  en: 'Never',
+  fr: 'Jamais',
+  es: 'Nunca',
+);
+
+static String get version => _tr(
+  it: 'Versione',
+  en: 'Version',
+  fr: 'Version',
+  es: 'Versión',
+);
+
+static String get account => _tr(
+  it: 'Account',
+  en: 'Account',
+  fr: 'Compte',
+  es: 'Cuenta',
+);
+
+static String get information => _tr(
+  it: 'Informazioni',
+  en: 'Information',
+  fr: 'Informations',
+  es: 'Información',
+);
+
+static String get about => _tr(
+  it: 'Informazioni',
+  en: 'About',
+  fr: 'Informations',
+  es: 'Información',
+);
+
+static String get syncCompleted => _tr(
+  it: "Sincronizzazione completata",
+  en: "Synchronization completed",
+  fr: "Synchronisation terminée",
+  es: "Sincronización completada",
+);
+
+static String get noInternet => _tr(
+  it: "Connessione Internet non disponibile.",
+  en: "No Internet connection.",
+  fr: "Connexion Internet indisponible.",
+  es: "Conexión a Internet no disponible.",
+);
+
 }

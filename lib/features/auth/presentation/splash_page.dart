@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../main.dart';
-import '../../../services/connectivity_service.dart';
 import 'login_page.dart';
 
 class SplashPage extends StatefulWidget {
@@ -37,35 +36,16 @@ class _SplashPageState extends State<SplashPage> {
       return;
     }
 
-    final online = await ConnectivityService.isOnline();
+if (!mounted) return;
 
-    if (!mounted) return;
-
-    if (online) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            "Per il primo accesso è necessaria una connessione Internet.",
-          ),
-        ),
-      );
-
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const LoginPage(),
-        ),
-      );
-    }
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (_) => const LoginPage(),
+  ),
+);
   }
-
+  
   @override
   Widget build(BuildContext context) {
     return const Scaffold(

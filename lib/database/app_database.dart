@@ -346,8 +346,8 @@ Future<void> syncFromSupabase() async {
       print("ID: ${item['id']}");
       print("Cloud updated : ${item['updated_at']}");
       print("Locale updated: ${locale?.updatedAt}");
-      print("Cloud luogo   : ${item['luogo']}");
-      print("Locale luogo  : ${locale?.luogo}");
+print("Cloud note   : ${item['note']}");
+print("Locale note  : ${locale?.note}");
       print("=============================");
 
       if (locale != null) {
@@ -417,7 +417,7 @@ Future<void> syncFromSupabase() async {
           .getSingleOrNull();
 
       print("----- SQLITE DOPO INSERT -----");
-      print("Luogo      : ${verifica?.luogo}");
+      print("Note       : ${verifica?.note}");
       print("Updated_at : ${verifica?.updatedAt}");
       print("------------------------------");
     }
@@ -425,6 +425,7 @@ Future<void> syncFromSupabase() async {
     print("Errore download sessioni: $e");
   }
 }
+
   Future<void> syncSpotsFromSupabase() async {
     final user = Supabase.instance.client.auth.currentUser;
 
@@ -464,7 +465,7 @@ final remoto = DateTime.parse(
   s['updated_at'],
 ).toUtc();
 
-final localeTime = locale?.updatedAt.toUtc();
+final localeTime = locale.updatedAt.toUtc();
 
 print("Cloud UTC : $remoto");
 print("Locale UTC: $localeTime");
@@ -740,37 +741,38 @@ Future<void> updateProfile(Profile profile) async {
     }
   }
 
-  Future<void> updateSpot({
-    required String id,
-    required String nome,
-    required double latitudine,
-    required double longitudine,
-  }) async {
-    await (update(
-      spots,
-    )..where(
-            (t) => t.id.equals(
-              id,
-            ),
-          ))
-        .write(
-      SpotsCompanion(
-        nome: Value(
-          nome,
-        ),
-        latitudine: Value(
-          latitudine,
-        ),
-        longitudine: Value(
-          longitudine,
-        ),
-        updatedAt: Value(DateTime.now().toUtc()),
-        synced: const Value(
-          false,
-        ),
-      ),
-    );
-  }
+Future<void> updateSpot({
+  required String id,
+  required String nome,
+  required double latitudine,
+  required double longitudine,
+}) async {
+  final now = DateTime.now().toUtc();
+
+  // Aggiorna lo spot
+  await (update(spots)
+        ..where((t) => t.id.equals(id)))
+      .write(
+    SpotsCompanion(
+      nome: Value(nome),
+      latitudine: Value(latitudine),
+      longitudine: Value(longitudine),
+      updatedAt: Value(now),
+      synced: const Value(false),
+    ),
+  );
+
+  // Aggiorna tutte le sessioni collegate allo spot
+  await (update(fishingSessions)
+        ..where((t) => t.spotId.equals(id)))
+      .write(
+    FishingSessionsCompanion(
+      luogo: Value(nome),
+      updatedAt: Value(now),
+      synced: const Value(false),
+    ),
+  );
+}
 
 Future<void> deleteSpot(String id) async {
   await (update(spots)

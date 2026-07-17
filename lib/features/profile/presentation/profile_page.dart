@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:drift/drift.dart';
+import 'package:drift/drift.dart' hide Column;
 import '../../auth/presentation/login_page.dart';
 import '../../../core/app_settings.dart';
 import '../../../core/t.dart';
@@ -284,168 +284,198 @@ await AppSettings.saveLanguage(lingua);
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    if (loading) {
-      return const Scaffold(
-        body: Center(
-          child: CircularProgressIndicator(),
-        ),
-      );
-    }
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          T.profile,
-        ),
-      ),
-      body: ListView(
-  padding: const EdgeInsets.all(16),
-  children: [
-
-    if (!online)
-      Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.amber.shade100,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            const Icon(Icons.cloud_off),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                T.profileViewOnlyOffline,
-              ),
-            ),
-          ],
-        ),
-      ),
-
-    if (!online)
-      const SizedBox(height: 20),
-                const Center(
-            child: CircleAvatar(
-              radius: 50,
-              child: Icon(
-                Icons.person,
-                size: 50,
-              ),
-            ),
-          ),
-          const SizedBox(
-            height: 30,
-          ),
-TextField(
-  controller: nomeController,
-  readOnly: !online,
-              decoration: InputDecoration(
-              labelText: T.firstName,
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-TextField(
-  controller: cognomeController,
-  readOnly: !online,
-              decoration: InputDecoration(
-              labelText: T.lastName,
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          DropdownButtonFormField<String>(
-            initialValue: lingua,
-            decoration: InputDecoration(
-              labelText: T.language,
-            ),
-            items: const [
-              DropdownMenuItem(
-                value: "it",
-                child: Text(
-                  "🇮🇹 Italiano",
-                ),
-              ),
-              DropdownMenuItem(
-                value: "en",
-                child: Text(
-                  "🇬🇧 English",
-                ),
-              ),
-              DropdownMenuItem(
-                value: "fr",
-                child: Text(
-                  "🇫🇷 Français",
-                ),
-              ),
-              DropdownMenuItem(
-                value: "es",
-                child: Text(
-                  "🇪🇸 Español",
-                ),
-              ),
-            ],
-onChanged: online
-    ? (v) {
-        setState(() {
-          lingua = v!;
-        });
-      }
-    : null,          ),
-          const SizedBox(
-            height: 30,
-          ),
-if (online)
-  ElevatedButton(
-    onPressed: () async {
-      try {
-        await salva();
-      } catch (e) {
-        if (!mounted) return;
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(T.onlineOnlyProfile),
-          ),
-        );
-      }
-    },
-    child: Text(T.saveProfile),
-  ),
-            const SizedBox(
-            height: 15,
-          ),
-          ElevatedButton.icon(
- onPressed: online ? cambiaPassword : null,
-             icon: const Icon(
-              Icons.lock,
-            ),
-            label: Text(
-              T.changePassword,
-            ),
-          ),
-          const SizedBox(
-            height: 15,
-          ),
-          ElevatedButton.icon(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            onPressed: logout,
-            icon: const Icon(
-              Icons.logout,
-            ),
-            label: Text(
-              T.logout,
-            ),
-          ),
-        ],
+@override
+Widget build(BuildContext context) {
+  if (loading) {
+    return const Scaffold(
+      backgroundColor: Color(0xFFF4FBFF),
+      body: Center(
+        child: CircularProgressIndicator(),
       ),
     );
   }
+
+  return Scaffold(
+    backgroundColor: const Color(0xFFF4FBFF),
+    body: SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.all(18),
+        children: [
+
+          const SizedBox(height: 10),
+
+          const CircleAvatar(
+            radius: 42,
+            backgroundColor: Color(0xFFD9EEF8),
+            child: Icon(
+              Icons.person,
+              size: 44,
+              color: Color(0xFF1565C0),
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          Center(
+            child: Text(
+              "${nomeController.text} ${cognomeController.text}".trim(),
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 4),
+
+          Center(
+            child: Text(
+              Supabase.instance.client.auth.currentUser?.email ?? "",
+              style: const TextStyle(
+                fontSize: 15,
+                color: Colors.black54,
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+
+          if (!online)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade100,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.cloud_off),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      T.profileViewOnlyOffline,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+          if (!online)
+            const SizedBox(height: 20),
+
+          Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(18),
+              child: Column(
+                children: [
+
+                  TextField(
+                    controller: nomeController,
+                    readOnly: !online,
+                    decoration: InputDecoration(
+                      labelText: T.firstName,
+                      prefixIcon: const Icon(Icons.person_outline),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  TextField(
+                    controller: cognomeController,
+                    readOnly: !online,
+                    decoration: InputDecoration(
+                      labelText: T.lastName,
+                      prefixIcon: const Icon(Icons.badge_outlined),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  DropdownButtonFormField<String>(
+                    initialValue: lingua,
+                    decoration: InputDecoration(
+                      labelText: T.language,
+                      prefixIcon: const Icon(Icons.language),
+                    ),
+                    items: const [
+                      DropdownMenuItem(
+                        value: "it",
+                        child: Text("🇮🇹 Italiano"),
+                      ),
+                      DropdownMenuItem(
+                        value: "en",
+                        child: Text("🇬🇧 English"),
+                      ),
+                      DropdownMenuItem(
+                        value: "fr",
+                        child: Text("🇫🇷 Français"),
+                      ),
+                      DropdownMenuItem(
+                        value: "es",
+                        child: Text("🇪🇸 Español"),
+                      ),
+                    ],
+                    onChanged: online
+                        ? (v) {
+                            setState(() {
+                              lingua = v!;
+                            });
+                          }
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+          ),
+
+          const SizedBox(height: 24),
+                    if (online)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () async {
+                  try {
+                    await salva();
+
+                    if (mounted) {
+                      setState(() {});
+                    }
+                  } catch (e) {
+                    if (!mounted) return;
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(T.onlineOnlyProfile),
+                      ),
+                    );
+                  }
+                },
+                icon: const Icon(Icons.save),
+                label: Text(T.saveProfile),
+              ),
+            ),
+
+          const SizedBox(height: 15),
+
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: online ? cambiaPassword : null,
+              icon: const Icon(Icons.lock),
+              label: Text(T.changePassword),
+            ),
+          ),
+
+          const SizedBox(height: 30),
+        ],
+      ),
+    ),
+  );
+}
 }

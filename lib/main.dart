@@ -3,18 +3,17 @@ import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'database/app_database.dart';
 import 'features/auth/presentation/login_page.dart';
-import 'features/sessions/presentation/new_session_page.dart';
 import 'features/sessions/presentation/session_detail_page.dart';
 import 'services/profile_service.dart';
-import 'features/profile/presentation/profile_page.dart';
 import 'features/spots/presentation/spots_page.dart';
-import 'services/connectivity_service.dart';
 import 'dart:async';
-import 'package:connectivity_plus/connectivity_plus.dart';
 import 'core/t.dart';
 import 'core/restart_widget.dart';
 import 'features/auth/presentation/splash_page.dart';
 import 'core/app_settings.dart';
+import 'features/settings/presentation/settings_page.dart';
+import 'services/sync_service.dart';
+import 'services/connectivity_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,6 +25,7 @@ void main() async {
   );
 
 await AppSettings.load();
+await ConnectivityService.initialize();
 
   print(
     "SESSIONE AVVIO:",
@@ -76,91 +76,67 @@ class _HomePageState extends State<HomePage> {
 
   bool loadingIniziale = true;
   int spotCount = 0;
+  String lastSync = T.never;
 
-  StreamSubscription? connectivitySubscription;
 
-  
+@override
+void initState() {
+  super.initState();
+  inizializza();
+}
 
-  @override
-  void initState() {
-    super.initState();
+Future<void> inizializza() async {
+  print("USER:");
+  print(Supabase.instance.client.auth.currentUser);
 
-    inizializza();
+  print("SESSION:");
+  print(Supabase.instance.client.auth.currentSession);
 
-    connectivitySubscription = Connectivity().onConnectivityChanged.listen(
-      (result) async {
-       if (result.contains(ConnectivityResult.none)) {
-
-        }
-      },
-    );
+  try {
+    await refreshDashboard();
+  } catch (e) {
+    print("Errore inizializzazione: $e");
   }
 
-  Future<void> inizializza() async {
-    print(
-      "USER:",
-    );
+  // Leggi sempre l'ultima sincronizzazione
+  final dt = AppSettings.lastSync;
 
-    print(
-      Supabase.instance.client.auth.currentUser,
-    );
-
-    print(
-      "SESSION:",
-    );
-
-    print(
-      Supabase.instance.client.auth.currentSession,
-    );
-
-    try {
-await refreshDashboard();
-    } catch (e) {
-      print(
-        "Errore inizializzazione: $e",
-      );
-    }
-
-    if (!mounted) {
-      return;
-    }
-
-    setState(() {
-      loadingIniziale = false;
-    });
+  if (dt == null) {
+    lastSync = T.never;
+  } else {
+    lastSync =
+        "${dt.day.toString().padLeft(2, '0')}/"
+        "${dt.month.toString().padLeft(2, '0')}/"
+        "${dt.year} "
+        "${dt.hour.toString().padLeft(2, '0')}:"
+        "${dt.minute.toString().padLeft(2, '0')}";
   }
+
+  if (!mounted) return;
+
+  setState(() {
+    loadingIniziale = false;
+  });
+}
 
 Future<void> sincronizza() async {
   try {
-    // 1. Elimina prima le sessioni
-    await database.syncDeletedSessions();
-
-    // 2. Poi elimina gli spot
-    await database.syncDeletedSpots();
-
-    // 3. Carica/modifica gli spot
-    await database.syncPendingSpots();
-
-    // 4. Carica/modifica le sessioni
-    await database.syncPendingSessions();
-
-    // 5. Scarica gli spot dal cloud
-    await database.syncSpotsFromSupabase();
-
-    // 6. Scarica le sessioni dal cloud
-    await database.syncFromSupabase();
-
-    // 7. Profilo
-    await database.downloadProfile();
-
-    // 8. Meteo
-    await database.syncMissingWeather();
+    await SyncService.sync(database);
   } catch (e) {
-    print("Errore sincronizzazione: $e");
+    debugPrint("Errore sincronizzazione: $e");
   }
 
-  // Aggiorna sempre la dashboard
-  await loadDashboardData();
+  await refreshDashboard();
+
+  final dt = AppSettings.lastSync;
+
+  lastSync = dt == null
+      ? T.never
+      : "${dt.day.toString().padLeft(2, '0')}/"
+        "${dt.month.toString().padLeft(2, '0')}/"
+        "${dt.year} "
+        "${dt.hour.toString().padLeft(2, '0')}:"
+        "${dt.minute.toString().padLeft(2, '0')}";
 
   if (!mounted) return;
 
@@ -178,6 +154,16 @@ Future<void> loadDashboardData() async {
 Future<void> refreshDashboard() async {
   try {
     await loadDashboardData();
+
+    final dt = AppSettings.lastSync;
+
+    lastSync = dt == null
+        ? T.never
+        : "${dt.day.toString().padLeft(2, '0')}/"
+          "${dt.month.toString().padLeft(2, '0')}/"
+          "${dt.year} "
+          "${dt.hour.toString().padLeft(2, '0')}:"
+          "${dt.minute.toString().padLeft(2, '0')}";
   } catch (e) {
     debugPrint("Errore refresh dashboard: $e");
   }
@@ -203,12 +189,6 @@ Future<void> refreshDashboard() async {
     );
   }
 
-  @override
-  void dispose() {
-    connectivitySubscription?.cancel();
-
-    super.dispose();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -224,51 +204,30 @@ Future<void> refreshDashboard() async {
       );
     }
     return Scaffold(
-      appBar: AppBar(
-        title: const SizedBox(),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.person,
-            ),
-            onPressed: () async {
-              
-
-              if (!mounted) return;
-
-Navigator.push(
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push(
   context,
   MaterialPageRoute(
-    builder: (_) => ProfilePage(
+    builder: (_) => SettingsPage(
       database: database,
     ),
   ),
 );
-            },
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => NewSessionPage(
-                database: database,
-              ),
-            ),
-          );
 
 if (result == true) {
   await refreshDashboard();
 }
+
+
         },
         child: const Icon(
-          Icons.add,
+Icons.add_rounded
         ),
       ),
-      body: FutureBuilder<List<FishingSession>>(
-        future: loadSessions(),
+body: SafeArea(
+  child: FutureBuilder<List<FishingSession>>(
+            future: loadSessions(),
         builder: (
           context,
           snapshot,
@@ -286,96 +245,22 @@ if (result == true) {
               16,
             ),
             children: [
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(
-                    25,
-                  ),
-                  gradient: const LinearGradient(
-                    colors: [
-                      Color(0xFFD9EEF8),
-                      Color(0xFFBFE3F7),
-                    ],
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Center(
-                      child: Image.asset(
-                        "assets/logo.png",
-                        height: 85,
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 8,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceAround,
-                      children: [
-                        _boxStat(
-                          Icons.phishing,
-                          sessions.length.toString(),
-                          T.sessions,
-                        ),
-                        FutureBuilder<bool>(
-                          future: ConnectivityService.isOnline(),
-                          builder: (context, snapshot) {
-                            final online = snapshot.data ?? false;
-
-                            return _boxStat(
-                              Icons.cloud,
-                              online ? "ON" : "OFF",
-                              T.cloud,
-                            );
-                          },
-                        ),
-                        GestureDetector(
-  onTap: () async {
-    await Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => const SpotsPage(),
-      ),
-    );
-
-    await refreshDashboard();
-  },
-                              child: _boxStat(
-                              Icons.place,
-                              spotCount.toString(),
-                              T.spots,
-                            )),
-                      ],
-                    )
-                  ],
-                ),
-              ),
+              _buildDashboard(sessions),
               const SizedBox(
-                height: 25,
+                height: 10,
               ),
-              Text(
-                T.recentSessions,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 20),
-SizedBox(
-  width: double.infinity,
-  child: ElevatedButton.icon(
-    onPressed: sincronizza,
-    icon: const Icon(Icons.sync),
-label: Text(T.sync),
+Center(
+  child: Text(
+    T.recentSessions,
+    style: const TextStyle(
+      fontSize: 22,
+      fontWeight: FontWeight.bold,
+    ),
   ),
 ),
+      
               const SizedBox(
-                height: 15,
+                height: 10,
               ),
               ...sessions.map(
                 (session) {
@@ -423,36 +308,189 @@ if (result == true) {
           );
         },
       ),
+),
     );
   }
 
-  Widget _boxStat(
-    IconData icon,
-    String value,
-    String label,
-  ) {
+Widget _buildDashboard(List<FishingSession> sessions) {
+  return Column(
+    children: [
+      // Header
+      Stack(
+        children: [
+          Center(
+            child: Image.asset(
+              "assets/logo.png",
+              height: 85,
+            ),
+          ),
+
+          Positioned(
+            top: -6,
+            right: -12,
+            child: IconButton(
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              icon: const Icon(
+                Icons.settings,
+                size: 28,
+                color: Color(0xFF1565C0),
+              ),
+onPressed: () async {
+await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => SettingsPage(
+      database: database,
+    ),
+  ),
+);
+  await refreshDashboard();
+},            ),
+          ),
+        ],
+      ),
+
+      const SizedBox(height: 10),
+
+      Container(
+padding: const EdgeInsets.only(
+  left: 18,
+  right: 18,
+  top: 12,
+  bottom: 6,
+),        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFFD9EEF8),
+              Color(0xFFBFE3F7),
+            ],
+          ),
+          boxShadow: const [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 12,
+              offset: Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _boxStat(
+                  Icons.phishing,
+                  sessions.length.toString(),
+                  T.sessions,
+                ),
+
+ValueListenableBuilder<bool>(
+  valueListenable: ConnectivityService.online,
+  builder: (context, online, _) {
+    return _boxStat(
+      Icons.circle,
+      online ? T.online : T.offline,
+      T.status,
+      color: online ? Colors.green : Colors.red,
+    );
+  },
+),
+
+InkWell(
+  borderRadius: BorderRadius.circular(12),
+                    onTap: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const SpotsPage(),
+                      ),
+                    );
+
+                    await refreshDashboard();
+                  },
+                  child: _boxStat(
+                    Icons.place,
+                    spotCount.toString(),
+                    T.spots,
+                    open: true,
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 8),
+
+            const Divider(),
+
+            const SizedBox(height: 4),
+
+            Center(
+              child: Text(
+                "🕒 ${T.lastSync}: $lastSync",
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: Colors.black87,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 4),
+          ],
+        ),
+      ),
+    ],
+  );
+}
+
+Widget _boxStat(
+  IconData icon,
+  String value,
+  String label, {
+  Color color = const Color(0xFF0D47A1),
+  bool open = false,
+})
+  {
     return Column(
       children: [
-        Icon(
-          icon,
-          color: const Color(0xFF0D47A1),
-        ),
+Icon(
+  icon,
+  size: 22,
+  color: color,
+),
         const SizedBox(
           height: 6,
         ),
         Text(
           value,
-          style: const TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: Color(0xFF0D47A1)),
-        ),
-        Text(
-          label,
-          style: const TextStyle(
-            color: Color(0xFF1565C0),
-          ),
-        ),
+style: TextStyle(
+  fontSize: 18,
+  fontWeight: FontWeight.bold,
+  color: color,
+),     
+   ),
+Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    Text(
+      label,
+      style: const TextStyle(
+        color: Color(0xFF1565C0),
+      ),
+    ),
+    if (open) ...[
+      const SizedBox(width: 3),
+      const Icon(
+        Icons.arrow_forward_ios,
+        size: 11,
+        color: Color(0xFF1565C0),
+      ),
+    ]
+  ],
+),
       ],
     );
   }

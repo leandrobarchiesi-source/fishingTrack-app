@@ -113,7 +113,7 @@ bool gpsSearching = false;
 
       faseLunare = s.faseLunare ??
           moonService.getMoonPhase(
-            s.data ?? data,
+            s.data ,
           );
 
       oraInizio = TimeOfDay(
@@ -447,7 +447,6 @@ if (mounted) {
 }
 
 Future<void> saveSession() async {
-  final sw = Stopwatch()..start();
   if (luogoController.text.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
