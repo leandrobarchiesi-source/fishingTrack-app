@@ -869,4 +869,40 @@ static String get noInternet => _tr(
   es: "Conexión a Internet no disponible.",
 );
 
+
+static String get wind => _tr(
+      it: 'Vento',
+      en: 'Wind',
+      fr: 'Vent',
+      es: 'Viento',
+    );
+
+static String get pressure => _tr(
+      it: 'Pressione',
+      en: 'Pressure',
+      fr: 'Pression',
+      es: 'Presión',
+    );
+
+static String get catches => _tr(
+      it: 'Catture',
+      en: 'Catches',
+      fr: 'Captures',
+      es: 'Capturas',
+    );
+
+static String get species => _tr(
+      it: 'Specie',
+      en: 'Species',
+      fr: 'Espèce',
+      es: 'Especie',
+    );
+
+static String get addSpecies => _tr(
+      it: 'Aggiungi specie',
+      en: 'Add species',
+      fr: 'Ajouter une espèce',
+      es: 'Añadir especie',
+    );
+
 }

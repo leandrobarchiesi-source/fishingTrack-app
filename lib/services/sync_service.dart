@@ -9,22 +9,31 @@ class SyncService {
     // 2. Elimina gli spot
     await database.syncDeletedSpots();
 
-    // 3. Carica gli spot
+    // 3. Elimina le catture
+    await database.syncDeletedSessionCatches();
+
+    // 4. Carica gli spot
     await database.syncPendingSpots();
 
-    // 4. Carica le sessioni
+    // 5. Carica le sessioni
     await database.syncPendingSessions();
 
-    // 5. Scarica gli spot
+    // 6. Carica le catture
+    await database.syncPendingSessionCatches();
+
+    // 7. Scarica gli spot
     await database.syncSpotsFromSupabase();
 
-    // 6. Scarica le sessioni
+    // 8. Scarica le sessioni
     await database.syncFromSupabase();
 
-    // 7. Profilo
+    // 9. Scarica le catture
+    await database.syncSessionCatchesFromSupabase();
+
+    // 10. Profilo
     await database.downloadProfile();
 
-    // 8. Meteo
+    // 11. Meteo
     await database.syncMissingWeather();
 
     // Salva ultima sincronizzazione

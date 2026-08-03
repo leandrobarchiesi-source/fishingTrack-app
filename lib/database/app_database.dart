@@ -6,10 +6,12 @@ import 'package:geolocator/geolocator.dart';
 import 'tables/fishing_sessions.dart';
 import 'tables/spots.dart';
 import 'tables/profiles.dart';
+import 'tables/sessions_catch.dart';
 import 'nearby_spot_result.dart';
 import '/core/app_settings.dart';
 import 'database_connection.dart';
 import 'migrations.dart';
+import 'tables/session_log.dart';
 
 part 'app_database.g.dart';
 
@@ -18,15 +20,11 @@ part 'app_database.g.dart';
     FishingSessions,
     Spots,
     Profiles,
+    SessionCatch,
+    SessionLog,
   ],
 )
-@DriftDatabase(
-  tables: [
-    FishingSessions,
-    Spots,
-    Profiles,
-  ],
-)
+
 class AppDatabase extends _$AppDatabase {
   AppDatabase()
       : super(
@@ -34,7 +32,7 @@ class AppDatabase extends _$AppDatabase {
         );
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => buildMigration(this);
@@ -84,16 +82,60 @@ Future<FishingSession?> getSessionById(String id) async {
 
   }
 
+Future<bool> isSpotUsed(
+  String spotId, {
+  String? excludeSessionId,
+}) async {
+  final query = select(fishingSessions)
+    ..where(
+      (t) =>
+          t.spotId.equals(spotId) &
+          t.deletedAt.isNull(),
+    );
+
+  if (excludeSessionId != null) {
+    query.where(
+      (t) => t.id.isNotValue(excludeSessionId),
+    );
+  }
+
+  return (await query.get()).isNotEmpty;
+}
+
 Future<void> deleteSession(String id) async {
-  await (update(fishingSessions)
-        ..where((t) => t.id.equals(id)))
-      .write(
-    FishingSessionsCompanion(
-      deletedAt: Value(DateTime.now().toUtc()),
-      synced: const Value(false),
-      updatedAt: Value(DateTime.now().toUtc()),
-    ),
-  );
+  await transaction(() async {
+    // Recupera la sessione
+    final session = await (select(fishingSessions)
+          ..where((t) => t.id.equals(id)))
+        .getSingle();
+
+    // Elimina le catture associate
+    await deleteSessionCatches(id);
+
+    // Marca la sessione come eliminata
+    await (update(fishingSessions)
+          ..where((t) => t.id.equals(id)))
+        .write(
+      FishingSessionsCompanion(
+        deletedAt: Value(DateTime.now().toUtc()),
+        synced: const Value(false),
+        updatedAt: Value(DateTime.now().toUtc()),
+      ),
+    );
+
+    // Se lo spot non è più utilizzato, elimina anche lui
+    if (session.spotId != null) {
+      final used = await isSpotUsed(
+        session.spotId!,
+        excludeSessionId: id,
+      );
+
+      if (!used) {
+        await deleteSpot(session.spotId!);
+        await deleteSessionLogs(id);
+      }
+    }
+  });
 }
 
   Future<void> updateSession(
@@ -225,6 +267,77 @@ Future<void> syncDeletedSessions() async {
     } catch (e) {
       print("Errore eliminazione sessione: $e");
     }
+  }
+}
+
+Future<void> syncDeletedSessionCatches() async {
+  final deleted = await (select(sessionCatch)
+        ..where((t) => t.deletedAt.isNotNull()))
+      .get();
+
+  for (final c in deleted) {
+    try {
+      await Supabase.instance.client
+          .from('session_catch')
+          .delete()
+          .eq('id', c.id);
+
+      await (delete(sessionCatch)
+            ..where((t) => t.id.equals(c.id)))
+          .go();
+    } catch (e) {
+      print("Errore eliminazione cattura: $e");
+    }
+  }
+}
+
+Future<void> syncSessionCatchesFromSupabase() async {
+  try {
+    final data = await Supabase.instance.client
+        .from('session_catch')
+        .select();
+
+    for (final item in data) {
+      final locale = await (select(sessionCatch)
+            ..where((t) => t.id.equals(item['id'])))
+          .getSingleOrNull();
+
+      if (locale != null) {
+        final remoto = DateTime.parse(
+          item['updated_at'],
+        ).toUtc();
+
+        final localeTime = locale.updatedAt.toUtc();
+
+        if (localeTime.isAfter(remoto)) {
+          continue;
+        }
+      }
+
+      await into(sessionCatch).insert(
+        SessionCatchCompanion(
+          id: Value(item['id']),
+          sessionId: Value(item['session_id']),
+          species: Value(item['species']),
+          quantity: Value(item['quantity']),
+          synced: const Value(true),
+          createdAt: Value(
+            DateTime.parse(item['created_at']),
+          ),
+          updatedAt: Value(
+            DateTime.parse(item['updated_at']),
+          ),
+          deletedAt: item['deleted_at'] == null
+              ? const Value.absent()
+              : Value(
+                  DateTime.parse(item['deleted_at']),
+                ),
+        ),
+        mode: InsertMode.insertOrReplace,
+      );
+    }
+  } catch (e) {
+    print("Errore download catture: $e");
   }
 }
 
@@ -560,6 +673,8 @@ print("========== SYNC SPOT ==========");
 print("Spot: ${s.nome}");
 print("userId SQLite : ${s.userId}");
 print("auth.uid()    : ${Supabase.instance.client.auth.currentUser?.id}");
+print("Spot ID: ${s.id}");
+print("Created: ${s.createdAt}");
 print("================================");
       // Inserimento / aggiornamento
       await Supabase.instance.client
@@ -894,6 +1009,159 @@ Future<Spot?> getSpotByNome(String nome) async {
       .get();
 
   return risultati.isEmpty ? null : risultati.first;
+}
+
+Future<List<SessionCatchData>> getSessionCatches(
+  String sessionId,
+) {
+  return (select(sessionCatch)
+        ..where((t) => t.sessionId.equals(sessionId)))
+      .get();
+}
+
+Future<void> saveSessionCatch(
+  SessionCatchCompanion catchData,
+) async {
+  await into(sessionCatch).insertOnConflictUpdate(
+    catchData.copyWith(
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<void> deleteSessionCatch(
+  String id,
+) async {
+  await (update(sessionCatch)
+        ..where((t) => t.id.equals(id)))
+      .write(
+    SessionCatchCompanion(
+      deletedAt: Value(DateTime.now().toUtc()),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<void> deleteSessionCatches(
+  String sessionId,
+) async {
+  await (update(sessionCatch)
+        ..where((t) => t.sessionId.equals(sessionId)))
+      .write(
+    SessionCatchCompanion(
+      deletedAt: Value(DateTime.now().toUtc()),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<List<String>> getUsedSpecies() async {
+  final result = await customSelect(
+    '''
+    SELECT DISTINCT species
+    FROM session_catch
+    WHERE species IS NOT NULL
+      AND species <> ''
+    ORDER BY species
+    ''',
+  ).get();
+
+  return result
+      .map((row) => row.read<String>('species'))
+      .toList();
+}
+
+Future<void> syncPendingSessionCatches() async {
+  print(">>> syncPendingSessionCatches()");
+
+  try {
+    final pending = await (select(sessionCatch)
+          ..where((t) => t.synced.equals(false)))
+        .get();
+
+    print("Catture da sincronizzare: ${pending.length}");
+
+    for (final c in pending) {
+      print("Upload cattura ${c.id} (${c.species})");
+      print("Sessione: ${c.sessionId}");
+      await Supabase.instance.client
+          .from('session_catch')
+          .upsert({
+        'id': c.id,
+        'session_id': c.sessionId,
+        'species': c.species,
+        'quantity': c.quantity,
+        'created_at': c.createdAt.toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+        'deleted_at': c.deletedAt?.toUtc().toIso8601String(),
+      });
+
+      await (update(sessionCatch)
+            ..where((t) => t.id.equals(c.id)))
+          .write(
+        const SessionCatchCompanion(
+          synced: Value(true),
+        ),
+      );
+    }
+  } catch (e, st) {
+    print("ERRORE syncPendingSessionCatches");
+    print(e);
+    print(st);
+  }
+}
+
+Future<void> saveSessionLog(
+  SessionLogCompanion event,
+) async {
+  await into(sessionLog).insertOnConflictUpdate(
+    event.copyWith(
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<List<SessionLogData>> getSessionLog(
+  String sessionId,
+) {
+  return (select(sessionLog)
+        ..where((t) => t.sessionId.equals(sessionId))
+        ..orderBy([
+          (t) => OrderingTerm.asc(t.timestamp),
+        ]))
+      .get();
+}
+
+Future<void> deleteSessionLog(
+  String id,
+) async {
+  await (update(sessionLog)
+        ..where((t) => t.id.equals(id)))
+      .write(
+    SessionLogCompanion(
+      deletedAt: Value(DateTime.now().toUtc()),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<void> deleteSessionLogs(
+  String sessionId,
+) async {
+  await (update(sessionLog)
+        ..where((t) => t.sessionId.equals(sessionId)))
+      .write(
+    SessionLogCompanion(
+      deletedAt: Value(DateTime.now().toUtc()),
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
 }
 
 }

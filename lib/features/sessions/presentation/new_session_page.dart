@@ -16,6 +16,16 @@ import '../../../core/gps/gps_service.dart';
 
 const uuid = Uuid();
 
+class CatchRow {
+  String? species;
+  int quantity;
+
+  CatchRow({
+    this.species,
+    this.quantity = 0,
+  });
+}
+
 class NewSessionPage extends StatefulWidget {
   final AppDatabase database;
   final FishingSession? session;
@@ -26,15 +36,20 @@ class NewSessionPage extends StatefulWidget {
     this.session,
   });
 
+
   @override
   State<NewSessionPage> createState() => _NewSessionPageState();
 }
 
 class _NewSessionPageState extends State<NewSessionPage> {
+
+final List<CatchRow> catches = [];
+
+final List<String> availableSpecies = [];
+
   late TextEditingController luogoController;
   late TextEditingController noteController;
   late TextEditingController temperaturaAcquaController;
-
   final weatherService = WeatherService();
 
   final moonService = MoonService();
@@ -78,6 +93,8 @@ bool gpsSearching = false;
   @override
   void initState() {
     super.initState();
+
+    loadAvailableSpecies();
 
     final s = widget.session;
 
@@ -125,12 +142,48 @@ bool gpsSearching = false;
         hour: s.oraFine.hour,
         minute: s.oraFine.minute,
       );
+
+      loadSessionCatches();
+
     } else {
       faseLunare = moonService.getMoonPhase(
         data,
       );
     }
   }
+
+  Future<void> loadAvailableSpecies() async {
+  final lista = await widget.database.getUsedSpecies();
+
+  if (!mounted) return;
+
+  setState(() {
+    availableSpecies
+      ..clear()
+      ..addAll(lista);
+  });
+}
+
+Future<void> loadSessionCatches() async {
+  catches.clear();
+
+  final lista = await widget.database.getSessionCatches(
+    widget.session!.id,
+  );
+
+  for (final c in lista) {
+    catches.add(
+      CatchRow(
+        species: c.species,
+        quantity: c.quantity,
+      ),
+    );
+  }
+
+  if (mounted) {
+    setState(() {});
+  }
+}
 
 
   Future<void> aggiornaMeteo() async {
@@ -446,6 +499,55 @@ if (mounted) {
 } 
 }
 
+Widget buildSpeciesField(CatchRow catchRow) {
+  return SizedBox(
+    height: 46,
+    child: Autocomplete<String>(
+      initialValue: TextEditingValue(
+        text: catchRow.species ?? '',
+      ),
+      optionsBuilder: (textEditingValue) {
+        if (textEditingValue.text.isEmpty) {
+          return availableSpecies;
+        }
+
+        return availableSpecies.where(
+          (s) => s.toLowerCase().contains(
+                textEditingValue.text.toLowerCase(),
+              ),
+        );
+      },
+      onSelected: (value) {
+        catchRow.species = value;
+      },
+      fieldViewBuilder: (
+        context,
+        controller,
+        focusNode,
+        onFieldSubmitted,
+      ) {
+        return TextField(
+          controller: controller,
+          focusNode: focusNode,
+          decoration: InputDecoration(
+            hintText: T.species,
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 10,
+            ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+          onChanged: (value) {
+            catchRow.species = value;
+          },
+        );
+      },
+    ),
+  );
+}
+
 Future<void> saveSession() async {
   if (luogoController.text.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -460,6 +562,8 @@ Future<void> saveSession() async {
     setState(() {
       loading = true;
     });
+
+    late final String sessionId;
 
     final inizio = DateTime(
       data.year,
@@ -476,22 +580,19 @@ Future<void> saveSession() async {
       oraFine.hour,
       oraFine.minute,
     );
+
     String? spotId;
 
     if (selectedSpotId != null) {
-      // Spot scelto dalla lista o già associato
       spotId = selectedSpotId;
     } else {
-      // Ricerca per nome
       final spot = await widget.database.getSpotByNome(
         luogoController.text.trim(),
       );
 
-
       if (spot != null) {
         spotId = spot.id;
       } else {
-        // Crea nuovo spot
         final nuovoId = uuid.v4();
 
         await widget.database.insertSpot(
@@ -510,15 +611,16 @@ Future<void> saveSession() async {
       }
     }
 
-
     final acqua = double.tryParse(
       temperaturaAcquaController.text.replaceAll(',', '.'),
     );
 
     if (widget.session == null) {
+      sessionId = uuid.v4();
+
       await widget.database.insertSession(
         FishingSessionsCompanion.insert(
-          id: uuid.v4(),
+          id: sessionId,
           userId: Supabase.instance.client.auth.currentUser!.id,
           spotId: Value(spotId),
           luogo: luogoController.text.trim(),
@@ -540,6 +642,8 @@ Future<void> saveSession() async {
         ),
       );
     } else {
+      sessionId = widget.session!.id;
+
       await widget.database.updateSession(
         widget.session!.copyWith(
           spotId: Value(spotId),
@@ -562,12 +666,33 @@ Future<void> saveSession() async {
       );
     }
 
-    if (!mounted) return;
+    // ===== SALVATAGGIO CATTURE =====
 
+    await widget.database.deleteSessionCatches(sessionId);
+
+    for (final c in catches) {
+      if (c.species == null || c.species!.trim().isEmpty) continue;
+
+      if (c.quantity <= 0) continue;
+
+await widget.database.saveSessionCatch(
+  SessionCatchCompanion.insert(
+    id: uuid.v4(),
+    sessionId: sessionId,
+    species: c.species!,
+    quantity: Value(c.quantity),
+  ),
+);
+    }
+
+    if (!mounted) return;
 
     Navigator.pop(context, true);
-  } catch (e) {
-    if (!mounted) return;
+} catch (e, st) {
+  debugPrint('ERRORE: $e');
+  debugPrint('STACK:');
+  debugPrint(st.toString());
+      if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -708,66 +833,155 @@ if (gpsSpotDistance != null)
             const SizedBox(
               height: 16,
             ),
-            if (temperatura != null)
-              Text(
-                "🌡 ${temperatura!.toStringAsFixed(1)} °C",
-              ),
-            const SizedBox(
-              height: 10,
-            ),
-            Row(
-              children: [
-                const Icon(
-                  Icons.water_drop,
-                  color: Color(0xFF29B6F6),
-                ),
-                const SizedBox(
-                  width: 8,
-                ),
-                Expanded(
-                  child: Text(
-                    T.waterTemperature,
-                    style: const TextStyle(
-                      fontSize: 16,
-                    ),
-                  ),
-                ),
-                SizedBox(
-                  width: 90,
-                  child: TextField(
-                    controller: temperaturaAcquaController,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    textAlign: TextAlign.center,
-                    decoration: const InputDecoration(
-                      suffixText: "°C",
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(
-              height: 12,
-            ),
-            if (vento != null) Text("💨 $vento"),
-            if (pressione != null) Text("📈 $pressione hPa"),
-            if (faseLunare != null)
-              Padding(
-                padding: const EdgeInsets.only(
-                  top: 6,
-                  bottom: 6,
-                ),
-                child: Text(
-                  T.moonPhase(faseLunare!),
-                  style: const TextStyle(
-                    fontSize: 16,
-                  ),
-                ),
-              ),
-            const SizedBox(
-              height: 16,
-            ),
+if (temperatura != null) ...[
+  Row(
+    children: [
+      const Icon(
+        Icons.thermostat,
+        color: Colors.redAccent,
+        size: 20,
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          T.airTemperature,
+          style: const TextStyle(fontSize: 16),
+        ),
+      ),
+      Text(
+        "${temperatura!.toStringAsFixed(1)} °C",
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  ),
+  const SizedBox(height: 12),
+],
+
+Row(
+  children: [
+    const Icon(
+      Icons.water_drop,
+      color: Color(0xFF29B6F6),
+      size: 20,
+    ),
+    const SizedBox(width: 10),
+    Expanded(
+      child: Text(
+        T.waterTemperature,
+        style: const TextStyle(
+          fontSize: 16,
+        ),
+      ),
+    ),
+    SizedBox(
+      width: 72,
+      child: TextField(
+        controller: temperaturaAcquaController,
+        keyboardType: const TextInputType.numberWithOptions(
+          decimal: true,
+        ),
+    textAlign: TextAlign.center,
+    textAlignVertical: TextAlignVertical.center,
+            style: const TextStyle(
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        decoration: InputDecoration(
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 4,
+            horizontal: 6,
+          ),
+          suffixText: "°",
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+
+if (vento != null) ...[
+  const SizedBox(height: 12),
+  Row(
+    children: [
+      const Icon(
+        Icons.air,
+        color: Colors.blueGrey,
+        size: 20,
+      ),
+      const SizedBox(width: 10),
+       Expanded(
+        child: Text(
+          T.wind,
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+      Text(
+        vento!,
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  ),
+],
+
+if (pressione != null) ...[
+  const SizedBox(height: 12),
+  Row(
+    children: [
+      const Icon(
+        Icons.speed,
+        color: Colors.orange,
+        size: 20,
+      ),
+      const SizedBox(width: 10),
+       Expanded(
+        child: Text(
+          T.pressure,
+          style: TextStyle(fontSize: 16),
+        ),
+      ),
+      Text(
+        "$pressione hPa",
+        style: const TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ],
+  ),
+],
+
+if (faseLunare != null) ...[
+  const SizedBox(height: 12),
+  Row(
+    children: [
+      const Icon(
+        Icons.nightlight_round,
+        color: Colors.indigo,
+        size: 20,
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Text(
+          T.moonPhase(faseLunare!),
+          style: const TextStyle(
+            fontSize: 16,
+          ),
+        ),
+      ),
+    ],
+  ),
+],
+
+const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: tipoPescata,
               items: [
@@ -811,58 +1025,321 @@ if (gpsSpotDistance != null)
                 labelText: T.fishingType,
               ),
             ),
-            ListTile(
-              title: Text(
-                T.date,
-              ),
-              subtitle: Text(
-                data.toString().split(' ')[0],
-              ),
-              trailing: const Icon(
-                Icons.calendar_month,
-              ),
-              onTap: selezionaData,
+            const SizedBox(height: 16),
+Row(
+  children: [
+    Expanded(
+      child: InkWell(
+        onTap: selezionaData,
+        borderRadius: BorderRadius.circular(12),
+        child: 
+Card(
+    elevation: 2,
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(18),
+    ),
+              child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 14,
             ),
-            ListTile(
-              title: Text(
-                T.startTime,
-              ),
-              subtitle: Text(
-                oraInizio.format(context),
-              ),
-              trailing: const Icon(
-                Icons.access_time,
-              ),
-              onTap: () => selezionaOra(true),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+children: [
+  const Icon(
+    Icons.calendar_month,
+    color: Colors.deepPurple,
+    size: 26,
+  ),
+
+  const SizedBox(height: 10),
+
+  Text(
+    "${data.day.toString().padLeft(2, '0')}/"
+    "${data.month.toString().padLeft(2, '0')}/"
+    "${data.year.toString().substring(2)}",
+    style: const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+],
             ),
-            ListTile(
-              title: Text(
-                T.endTime,
-              ),
-              subtitle: Text(
-                oraFine.format(context),
-              ),
-              trailing: const Icon(
-                Icons.access_time,
-              ),
-              onTap: () => selezionaOra(false),
+          ),
+        ),
+      ),
+    ),
+
+    const SizedBox(width: 10),
+
+    Expanded(
+      child: InkWell(
+        onTap: () => selezionaOra(true),
+        borderRadius: BorderRadius.circular(12),
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 14,
             ),
-            TextField(
-              controller: noteController,
-              maxLines: 4,
-              decoration: InputDecoration(
-                labelText: T.notes,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+children: [
+  const Icon(
+    Icons.schedule,
+    color: Colors.deepPurple,
+    size: 26,
+  ),
+
+  const SizedBox(height: 10),
+
+  Text(
+    oraInizio.format(context),
+    style: const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+],
+            ),
+          ),
+        ),
+      ),
+    ),
+
+    const SizedBox(width: 10),
+
+    Expanded(
+      child: InkWell(
+        onTap: () => selezionaOra(false),
+        borderRadius: BorderRadius.circular(12),
+        child: Card(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(18),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+              vertical: 16,
+              horizontal: 14,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+children: [
+  const Icon(
+    Icons.schedule,
+    color: Colors.deepPurple,
+    size: 26,
+  ),
+
+  const SizedBox(height: 10),
+
+  Text(
+    oraFine.format(context),
+    style: const TextStyle(
+      fontSize: 15,
+      fontWeight: FontWeight.w600,
+    ),
+  ),
+],
+            ),
+          ),
+        ),
+      ),
+    ),
+  ],
+),
+ const SizedBox(height: 10),
+ 
+TextField(
+  controller: noteController,
+  minLines: 3,
+  maxLines: 3,
+  decoration: InputDecoration(
+    labelText: T.notes,
+    alignLabelWithHint: true,
+    filled: true,
+    fillColor: Colors.grey.shade100,
+    contentPadding: const EdgeInsets.all(16),
+    border: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(
+        color: Colors.grey.shade300,
+      ),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(
+        color: Colors.deepPurple,
+        width: 2,
+      ),
+    ),
+  ),
+),
+
+const SizedBox(height: 20),
+
+Card(
+  elevation: 1,
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(16),
+  ),
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            const Icon(
+              Icons.phishing,
+              color: Colors.green,
+              size: 22,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              T.catches,
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
               ),
-            ),
-            const SizedBox(
-              height: 30,
-            ),
-            ElevatedButton(
-              onPressed: loading ? null : saveSession,
-              child:
-                  Text(widget.session == null ? T.saveSession : T.saveChanges),
             ),
           ],
+        ),
+
+        if (catches.isNotEmpty) ...[
+          const SizedBox(height: 16),
+
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: catches.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (context, index) {
+              final catchRow = catches[index];
+
+return Row(
+  children: [
+    Expanded(
+      child: buildSpeciesField(catchRow),
+    ),
+
+    const SizedBox(width: 8),
+
+    IconButton(
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      icon: const Icon(
+        Icons.remove_circle_outline,
+        size: 22,
+      ),
+      onPressed: () {
+        setState(() {
+          if (catchRow.quantity > 0) {
+            catchRow.quantity--;
+          }
+        });
+      },
+    ),
+
+    SizedBox(
+      width: 24,
+      child: Center(
+        child: Text(
+          catchRow.quantity.toString(),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
+      ),
+    ),
+
+    IconButton(
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      icon: const Icon(
+        Icons.add_circle_outline,
+        size: 22,
+      ),
+      onPressed: () {
+        setState(() {
+          catchRow.quantity++;
+        });
+      },
+    ),
+
+    const SizedBox(width: 4),
+
+    IconButton(
+      visualDensity: VisualDensity.compact,
+      padding: EdgeInsets.zero,
+      constraints: const BoxConstraints(),
+      icon: const Icon(
+        Icons.close,
+        color: Colors.red,
+        size: 20,
+      ),
+      tooltip: T.delete,
+      onPressed: () {
+        setState(() {
+          catches.removeAt(index);
+        });
+      },
+    ),
+  ],
+);
+   },
+          ),
+        ],
+
+        const SizedBox(height: 12),
+
+        Center(
+          child: OutlinedButton.icon(
+            icon: const Icon(Icons.add),
+            label: Text(T.addSpecies),
+            onPressed: () {
+              setState(() {
+                catches.add(CatchRow());
+              });
+            },
+          ),
+        ),
+      ],
+    ),
+  ),
+),
+const SizedBox(height: 10),
+
+SizedBox(
+  width: double.infinity,
+  height: 52,
+  child: ElevatedButton(
+    onPressed: loading ? null : saveSession,
+    style: ElevatedButton.styleFrom(
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+      ),
+    ),
+    child: Text(
+      widget.session == null ? T.saveSession : T.saveChanges,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  ),
+),          ],
         ),
       ),
     );

@@ -1982,6 +1982,944 @@ class ProfilesCompanion extends UpdateCompanion<Profile> {
   }
 }
 
+class $SessionCatchTable extends SessionCatch
+    with TableInfo<$SessionCatchTable, SessionCatchData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionCatchTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES fishing_sessions (id) ON DELETE CASCADE'));
+  static const VerificationMeta _speciesMeta =
+      const VerificationMeta('species');
+  @override
+  late final GeneratedColumn<String> species = GeneratedColumn<String>(
+      'species', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _quantityMeta =
+      const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+      'quantity', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+      'synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        sessionId,
+        species,
+        quantity,
+        synced,
+        createdAt,
+        updatedAt,
+        deletedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'session_catch';
+  @override
+  VerificationContext validateIntegrity(Insertable<SessionCatchData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('species')) {
+      context.handle(_speciesMeta,
+          species.isAcceptableOrUnknown(data['species']!, _speciesMeta));
+    } else if (isInserting) {
+      context.missing(_speciesMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta,
+          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    }
+    if (data.containsKey('synced')) {
+      context.handle(_syncedMeta,
+          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SessionCatchData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionCatchData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      species: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}species'])!,
+      quantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}quantity'])!,
+      synced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+    );
+  }
+
+  @override
+  $SessionCatchTable createAlias(String alias) {
+    return $SessionCatchTable(attachedDatabase, alias);
+  }
+}
+
+class SessionCatchData extends DataClass
+    implements Insertable<SessionCatchData> {
+  final String id;
+  final String sessionId;
+  final String species;
+  final int quantity;
+  final bool synced;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const SessionCatchData(
+      {required this.id,
+      required this.sessionId,
+      required this.species,
+      required this.quantity,
+      required this.synced,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['species'] = Variable<String>(species);
+    map['quantity'] = Variable<int>(quantity);
+    map['synced'] = Variable<bool>(synced);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SessionCatchCompanion toCompanion(bool nullToAbsent) {
+    return SessionCatchCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      species: Value(species),
+      quantity: Value(quantity),
+      synced: Value(synced),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SessionCatchData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionCatchData(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      species: serializer.fromJson<String>(json['species']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      synced: serializer.fromJson<bool>(json['synced']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'species': serializer.toJson<String>(species),
+      'quantity': serializer.toJson<int>(quantity),
+      'synced': serializer.toJson<bool>(synced),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SessionCatchData copyWith(
+          {String? id,
+          String? sessionId,
+          String? species,
+          int? quantity,
+          bool? synced,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent()}) =>
+      SessionCatchData(
+        id: id ?? this.id,
+        sessionId: sessionId ?? this.sessionId,
+        species: species ?? this.species,
+        quantity: quantity ?? this.quantity,
+        synced: synced ?? this.synced,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+      );
+  SessionCatchData copyWithCompanion(SessionCatchCompanion data) {
+    return SessionCatchData(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      species: data.species.present ? data.species.value : this.species,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      synced: data.synced.present ? data.synced.value : this.synced,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionCatchData(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('species: $species, ')
+          ..write('quantity: $quantity, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sessionId, species, quantity, synced,
+      createdAt, updatedAt, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionCatchData &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.species == this.species &&
+          other.quantity == this.quantity &&
+          other.synced == this.synced &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SessionCatchCompanion extends UpdateCompanion<SessionCatchData> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> species;
+  final Value<int> quantity;
+  final Value<bool> synced;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SessionCatchCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.species = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionCatchCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String species,
+    this.quantity = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sessionId = Value(sessionId),
+        species = Value(species);
+  static Insertable<SessionCatchData> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? species,
+    Expression<int>? quantity,
+    Expression<bool>? synced,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (species != null) 'species': species,
+      if (quantity != null) 'quantity': quantity,
+      if (synced != null) 'synced': synced,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionCatchCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? sessionId,
+      Value<String>? species,
+      Value<int>? quantity,
+      Value<bool>? synced,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<int>? rowid}) {
+    return SessionCatchCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      species: species ?? this.species,
+      quantity: quantity ?? this.quantity,
+      synced: synced ?? this.synced,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (species.present) {
+      map['species'] = Variable<String>(species.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionCatchCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('species: $species, ')
+          ..write('quantity: $quantity, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SessionLogTable extends SessionLog
+    with TableInfo<$SessionLogTable, SessionLogData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionLogTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES fishing_sessions (id) ON DELETE CASCADE'));
+  static const VerificationMeta _eventTypeMeta =
+      const VerificationMeta('eventType');
+  @override
+  late final GeneratedColumn<String> eventType = GeneratedColumn<String>(
+      'event_type', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _speciesMeta =
+      const VerificationMeta('species');
+  @override
+  late final GeneratedColumn<String> species = GeneratedColumn<String>(
+      'species', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _quantityMeta =
+      const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+      'quantity', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(1));
+  static const VerificationMeta _timestampMeta =
+      const VerificationMeta('timestamp');
+  @override
+  late final GeneratedColumn<DateTime> timestamp = GeneratedColumn<DateTime>(
+      'timestamp', aliasedName, false,
+      type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+      'synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        id,
+        sessionId,
+        eventType,
+        species,
+        quantity,
+        timestamp,
+        synced,
+        createdAt,
+        updatedAt,
+        deletedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'session_log';
+  @override
+  VerificationContext validateIntegrity(Insertable<SessionLogData> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('event_type')) {
+      context.handle(_eventTypeMeta,
+          eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta));
+    } else if (isInserting) {
+      context.missing(_eventTypeMeta);
+    }
+    if (data.containsKey('species')) {
+      context.handle(_speciesMeta,
+          species.isAcceptableOrUnknown(data['species']!, _speciesMeta));
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta,
+          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    }
+    if (data.containsKey('timestamp')) {
+      context.handle(_timestampMeta,
+          timestamp.isAcceptableOrUnknown(data['timestamp']!, _timestampMeta));
+    } else if (isInserting) {
+      context.missing(_timestampMeta);
+    }
+    if (data.containsKey('synced')) {
+      context.handle(_syncedMeta,
+          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SessionLogData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionLogData(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      eventType: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}event_type'])!,
+      species: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}species']),
+      quantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}quantity'])!,
+      timestamp: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}timestamp'])!,
+      synced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+    );
+  }
+
+  @override
+  $SessionLogTable createAlias(String alias) {
+    return $SessionLogTable(attachedDatabase, alias);
+  }
+}
+
+class SessionLogData extends DataClass implements Insertable<SessionLogData> {
+  final String id;
+  final String sessionId;
+  final String eventType;
+  final String? species;
+  final int quantity;
+  final DateTime timestamp;
+  final bool synced;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const SessionLogData(
+      {required this.id,
+      required this.sessionId,
+      required this.eventType,
+      this.species,
+      required this.quantity,
+      required this.timestamp,
+      required this.synced,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['event_type'] = Variable<String>(eventType);
+    if (!nullToAbsent || species != null) {
+      map['species'] = Variable<String>(species);
+    }
+    map['quantity'] = Variable<int>(quantity);
+    map['timestamp'] = Variable<DateTime>(timestamp);
+    map['synced'] = Variable<bool>(synced);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SessionLogCompanion toCompanion(bool nullToAbsent) {
+    return SessionLogCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      eventType: Value(eventType),
+      species: species == null && nullToAbsent
+          ? const Value.absent()
+          : Value(species),
+      quantity: Value(quantity),
+      timestamp: Value(timestamp),
+      synced: Value(synced),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SessionLogData.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionLogData(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      eventType: serializer.fromJson<String>(json['eventType']),
+      species: serializer.fromJson<String?>(json['species']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+      timestamp: serializer.fromJson<DateTime>(json['timestamp']),
+      synced: serializer.fromJson<bool>(json['synced']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'eventType': serializer.toJson<String>(eventType),
+      'species': serializer.toJson<String?>(species),
+      'quantity': serializer.toJson<int>(quantity),
+      'timestamp': serializer.toJson<DateTime>(timestamp),
+      'synced': serializer.toJson<bool>(synced),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SessionLogData copyWith(
+          {String? id,
+          String? sessionId,
+          String? eventType,
+          Value<String?> species = const Value.absent(),
+          int? quantity,
+          DateTime? timestamp,
+          bool? synced,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent()}) =>
+      SessionLogData(
+        id: id ?? this.id,
+        sessionId: sessionId ?? this.sessionId,
+        eventType: eventType ?? this.eventType,
+        species: species.present ? species.value : this.species,
+        quantity: quantity ?? this.quantity,
+        timestamp: timestamp ?? this.timestamp,
+        synced: synced ?? this.synced,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+      );
+  SessionLogData copyWithCompanion(SessionLogCompanion data) {
+    return SessionLogData(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      eventType: data.eventType.present ? data.eventType.value : this.eventType,
+      species: data.species.present ? data.species.value : this.species,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+      timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
+      synced: data.synced.present ? data.synced.value : this.synced,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionLogData(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('eventType: $eventType, ')
+          ..write('species: $species, ')
+          ..write('quantity: $quantity, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sessionId, eventType, species, quantity,
+      timestamp, synced, createdAt, updatedAt, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionLogData &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.eventType == this.eventType &&
+          other.species == this.species &&
+          other.quantity == this.quantity &&
+          other.timestamp == this.timestamp &&
+          other.synced == this.synced &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<String> eventType;
+  final Value<String?> species;
+  final Value<int> quantity;
+  final Value<DateTime> timestamp;
+  final Value<bool> synced;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SessionLogCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.eventType = const Value.absent(),
+    this.species = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.timestamp = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionLogCompanion.insert({
+    required String id,
+    required String sessionId,
+    required String eventType,
+    this.species = const Value.absent(),
+    this.quantity = const Value.absent(),
+    required DateTime timestamp,
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sessionId = Value(sessionId),
+        eventType = Value(eventType),
+        timestamp = Value(timestamp);
+  static Insertable<SessionLogData> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<String>? eventType,
+    Expression<String>? species,
+    Expression<int>? quantity,
+    Expression<DateTime>? timestamp,
+    Expression<bool>? synced,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (eventType != null) 'event_type': eventType,
+      if (species != null) 'species': species,
+      if (quantity != null) 'quantity': quantity,
+      if (timestamp != null) 'timestamp': timestamp,
+      if (synced != null) 'synced': synced,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionLogCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? sessionId,
+      Value<String>? eventType,
+      Value<String?>? species,
+      Value<int>? quantity,
+      Value<DateTime>? timestamp,
+      Value<bool>? synced,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<int>? rowid}) {
+    return SessionLogCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      eventType: eventType ?? this.eventType,
+      species: species ?? this.species,
+      quantity: quantity ?? this.quantity,
+      timestamp: timestamp ?? this.timestamp,
+      synced: synced ?? this.synced,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (eventType.present) {
+      map['event_type'] = Variable<String>(eventType.value);
+    }
+    if (species.present) {
+      map['species'] = Variable<String>(species.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (timestamp.present) {
+      map['timestamp'] = Variable<DateTime>(timestamp.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionLogCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('eventType: $eventType, ')
+          ..write('species: $species, ')
+          ..write('quantity: $quantity, ')
+          ..write('timestamp: $timestamp, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -1989,12 +2927,33 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $FishingSessionsTable(this);
   late final $SpotsTable spots = $SpotsTable(this);
   late final $ProfilesTable profiles = $ProfilesTable(this);
+  late final $SessionCatchTable sessionCatch = $SessionCatchTable(this);
+  late final $SessionLogTable sessionLog = $SessionLogTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
   List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [fishingSessions, spots, profiles];
+      [fishingSessions, spots, profiles, sessionCatch, sessionLog];
+  @override
+  StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
+        [
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('fishing_sessions',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('session_catch', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('fishing_sessions',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('session_log', kind: UpdateKind.delete),
+            ],
+          ),
+        ],
+      );
 }
 
 typedef $$FishingSessionsTableCreateCompanionBuilder = FishingSessionsCompanion
@@ -2047,6 +3006,42 @@ typedef $$FishingSessionsTableUpdateCompanionBuilder = FishingSessionsCompanion
   Value<DateTime> updatedAt,
   Value<int> rowid,
 });
+
+final class $$FishingSessionsTableReferences extends BaseReferences<
+    _$AppDatabase, $FishingSessionsTable, FishingSession> {
+  $$FishingSessionsTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SessionCatchTable, List<SessionCatchData>>
+      _sessionCatchRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.sessionCatch,
+              aliasName: $_aliasNameGenerator(
+                  db.fishingSessions.id, db.sessionCatch.sessionId));
+
+  $$SessionCatchTableProcessedTableManager get sessionCatchRefs {
+    final manager = $$SessionCatchTableTableManager($_db, $_db.sessionCatch)
+        .filter((f) => f.sessionId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_sessionCatchRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$SessionLogTable, List<SessionLogData>>
+      _sessionLogRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.sessionLog,
+              aliasName: $_aliasNameGenerator(
+                  db.fishingSessions.id, db.sessionLog.sessionId));
+
+  $$SessionLogTableProcessedTableManager get sessionLogRefs {
+    final manager = $$SessionLogTableTableManager($_db, $_db.sessionLog)
+        .filter((f) => f.sessionId.id($_item.id));
+
+    final cache = $_typedResult.readTableOrNull(_sessionLogRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
 
 class $$FishingSessionsTableFilterComposer
     extends Composer<_$AppDatabase, $FishingSessionsTable> {
@@ -2120,6 +3115,48 @@ class $$FishingSessionsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> sessionCatchRefs(
+      Expression<bool> Function($$SessionCatchTableFilterComposer f) f) {
+    final $$SessionCatchTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionCatch,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionCatchTableFilterComposer(
+              $db: $db,
+              $table: $db.sessionCatch,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> sessionLogRefs(
+      Expression<bool> Function($$SessionLogTableFilterComposer f) f) {
+    final $$SessionLogTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionLog,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionLogTableFilterComposer(
+              $db: $db,
+              $table: $db.sessionLog,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$FishingSessionsTableOrderingComposer
@@ -2267,6 +3304,48 @@ class $$FishingSessionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  Expression<T> sessionCatchRefs<T extends Object>(
+      Expression<T> Function($$SessionCatchTableAnnotationComposer a) f) {
+    final $$SessionCatchTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionCatch,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionCatchTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sessionCatch,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<T> sessionLogRefs<T extends Object>(
+      Expression<T> Function($$SessionLogTableAnnotationComposer a) f) {
+    final $$SessionLogTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionLog,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionLogTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sessionLog,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$FishingSessionsTableTableManager extends RootTableManager<
@@ -2278,12 +3357,9 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
     $$FishingSessionsTableAnnotationComposer,
     $$FishingSessionsTableCreateCompanionBuilder,
     $$FishingSessionsTableUpdateCompanionBuilder,
-    (
-      FishingSession,
-      BaseReferences<_$AppDatabase, $FishingSessionsTable, FishingSession>
-    ),
+    (FishingSession, $$FishingSessionsTableReferences),
     FishingSession,
-    PrefetchHooks Function()> {
+    PrefetchHooks Function({bool sessionCatchRefs, bool sessionLogRefs})> {
   $$FishingSessionsTableTableManager(
       _$AppDatabase db, $FishingSessionsTable table)
       : super(TableManagerState(
@@ -2392,9 +3468,50 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map((e) => (
+                    e.readTable(table),
+                    $$FishingSessionsTableReferences(db, table, e)
+                  ))
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: (
+              {sessionCatchRefs = false, sessionLogRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (sessionCatchRefs) db.sessionCatch,
+                if (sessionLogRefs) db.sessionLog
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (sessionCatchRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$FishingSessionsTableReferences
+                            ._sessionCatchRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$FishingSessionsTableReferences(db, table, p0)
+                                .sessionCatchRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.sessionId == item.id),
+                        typedResults: items),
+                  if (sessionLogRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$FishingSessionsTableReferences
+                            ._sessionLogRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$FishingSessionsTableReferences(db, table, p0)
+                                .sessionLogRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.sessionId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
         ));
 }
 
@@ -2407,12 +3524,9 @@ typedef $$FishingSessionsTableProcessedTableManager = ProcessedTableManager<
     $$FishingSessionsTableAnnotationComposer,
     $$FishingSessionsTableCreateCompanionBuilder,
     $$FishingSessionsTableUpdateCompanionBuilder,
-    (
-      FishingSession,
-      BaseReferences<_$AppDatabase, $FishingSessionsTable, FishingSession>
-    ),
+    (FishingSession, $$FishingSessionsTableReferences),
     FishingSession,
-    PrefetchHooks Function()>;
+    PrefetchHooks Function({bool sessionCatchRefs, bool sessionLogRefs})>;
 typedef $$SpotsTableCreateCompanionBuilder = SpotsCompanion Function({
   required String id,
   required String userId,
@@ -2892,6 +4006,674 @@ typedef $$ProfilesTableProcessedTableManager = ProcessedTableManager<
     (Profile, BaseReferences<_$AppDatabase, $ProfilesTable, Profile>),
     Profile,
     PrefetchHooks Function()>;
+typedef $$SessionCatchTableCreateCompanionBuilder = SessionCatchCompanion
+    Function({
+  required String id,
+  required String sessionId,
+  required String species,
+  Value<int> quantity,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$SessionCatchTableUpdateCompanionBuilder = SessionCatchCompanion
+    Function({
+  Value<String> id,
+  Value<String> sessionId,
+  Value<String> species,
+  Value<int> quantity,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+final class $$SessionCatchTableReferences extends BaseReferences<_$AppDatabase,
+    $SessionCatchTable, SessionCatchData> {
+  $$SessionCatchTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $FishingSessionsTable _sessionIdTable(_$AppDatabase db) =>
+      db.fishingSessions.createAlias($_aliasNameGenerator(
+          db.sessionCatch.sessionId, db.fishingSessions.id));
+
+  $$FishingSessionsTableProcessedTableManager? get sessionId {
+    if ($_item.sessionId == null) return null;
+    final manager =
+        $$FishingSessionsTableTableManager($_db, $_db.fishingSessions)
+            .filter((f) => f.id($_item.sessionId!));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$SessionCatchTableFilterComposer
+    extends Composer<_$AppDatabase, $SessionCatchTable> {
+  $$SessionCatchTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get species => $composableBuilder(
+      column: $table.species, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  $$FishingSessionsTableFilterComposer get sessionId {
+    final $$FishingSessionsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableFilterComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionCatchTableOrderingComposer
+    extends Composer<_$AppDatabase, $SessionCatchTable> {
+  $$SessionCatchTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get species => $composableBuilder(
+      column: $table.species, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  $$FishingSessionsTableOrderingComposer get sessionId {
+    final $$FishingSessionsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableOrderingComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionCatchTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SessionCatchTable> {
+  $$SessionCatchTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get species =>
+      $composableBuilder(column: $table.species, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$FishingSessionsTableAnnotationComposer get sessionId {
+    final $$FishingSessionsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionCatchTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SessionCatchTable,
+    SessionCatchData,
+    $$SessionCatchTableFilterComposer,
+    $$SessionCatchTableOrderingComposer,
+    $$SessionCatchTableAnnotationComposer,
+    $$SessionCatchTableCreateCompanionBuilder,
+    $$SessionCatchTableUpdateCompanionBuilder,
+    (SessionCatchData, $$SessionCatchTableReferences),
+    SessionCatchData,
+    PrefetchHooks Function({bool sessionId})> {
+  $$SessionCatchTableTableManager(_$AppDatabase db, $SessionCatchTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionCatchTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionCatchTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionCatchTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<String> species = const Value.absent(),
+            Value<int> quantity = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionCatchCompanion(
+            id: id,
+            sessionId: sessionId,
+            species: species,
+            quantity: quantity,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String sessionId,
+            required String species,
+            Value<int> quantity = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionCatchCompanion.insert(
+            id: id,
+            sessionId: sessionId,
+            species: species,
+            quantity: quantity,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$SessionCatchTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (sessionId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.sessionId,
+                    referencedTable:
+                        $$SessionCatchTableReferences._sessionIdTable(db),
+                    referencedColumn:
+                        $$SessionCatchTableReferences._sessionIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$SessionCatchTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SessionCatchTable,
+    SessionCatchData,
+    $$SessionCatchTableFilterComposer,
+    $$SessionCatchTableOrderingComposer,
+    $$SessionCatchTableAnnotationComposer,
+    $$SessionCatchTableCreateCompanionBuilder,
+    $$SessionCatchTableUpdateCompanionBuilder,
+    (SessionCatchData, $$SessionCatchTableReferences),
+    SessionCatchData,
+    PrefetchHooks Function({bool sessionId})>;
+typedef $$SessionLogTableCreateCompanionBuilder = SessionLogCompanion Function({
+  required String id,
+  required String sessionId,
+  required String eventType,
+  Value<String?> species,
+  Value<int> quantity,
+  required DateTime timestamp,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$SessionLogTableUpdateCompanionBuilder = SessionLogCompanion Function({
+  Value<String> id,
+  Value<String> sessionId,
+  Value<String> eventType,
+  Value<String?> species,
+  Value<int> quantity,
+  Value<DateTime> timestamp,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+final class $$SessionLogTableReferences
+    extends BaseReferences<_$AppDatabase, $SessionLogTable, SessionLogData> {
+  $$SessionLogTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $FishingSessionsTable _sessionIdTable(_$AppDatabase db) =>
+      db.fishingSessions.createAlias(
+          $_aliasNameGenerator(db.sessionLog.sessionId, db.fishingSessions.id));
+
+  $$FishingSessionsTableProcessedTableManager? get sessionId {
+    if ($_item.sessionId == null) return null;
+    final manager =
+        $$FishingSessionsTableTableManager($_db, $_db.fishingSessions)
+            .filter((f) => f.id($_item.sessionId!));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$SessionLogTableFilterComposer
+    extends Composer<_$AppDatabase, $SessionLogTable> {
+  $$SessionLogTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get eventType => $composableBuilder(
+      column: $table.eventType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get species => $composableBuilder(
+      column: $table.species, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  $$FishingSessionsTableFilterComposer get sessionId {
+    final $$FishingSessionsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableFilterComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionLogTableOrderingComposer
+    extends Composer<_$AppDatabase, $SessionLogTable> {
+  $$SessionLogTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get eventType => $composableBuilder(
+      column: $table.eventType, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get species => $composableBuilder(
+      column: $table.species, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get timestamp => $composableBuilder(
+      column: $table.timestamp, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  $$FishingSessionsTableOrderingComposer get sessionId {
+    final $$FishingSessionsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableOrderingComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionLogTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SessionLogTable> {
+  $$SessionLogTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get eventType =>
+      $composableBuilder(column: $table.eventType, builder: (column) => column);
+
+  GeneratedColumn<String> get species =>
+      $composableBuilder(column: $table.species, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get timestamp =>
+      $composableBuilder(column: $table.timestamp, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$FishingSessionsTableAnnotationComposer get sessionId {
+    final $$FishingSessionsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionLogTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SessionLogTable,
+    SessionLogData,
+    $$SessionLogTableFilterComposer,
+    $$SessionLogTableOrderingComposer,
+    $$SessionLogTableAnnotationComposer,
+    $$SessionLogTableCreateCompanionBuilder,
+    $$SessionLogTableUpdateCompanionBuilder,
+    (SessionLogData, $$SessionLogTableReferences),
+    SessionLogData,
+    PrefetchHooks Function({bool sessionId})> {
+  $$SessionLogTableTableManager(_$AppDatabase db, $SessionLogTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionLogTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionLogTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionLogTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<String> eventType = const Value.absent(),
+            Value<String?> species = const Value.absent(),
+            Value<int> quantity = const Value.absent(),
+            Value<DateTime> timestamp = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionLogCompanion(
+            id: id,
+            sessionId: sessionId,
+            eventType: eventType,
+            species: species,
+            quantity: quantity,
+            timestamp: timestamp,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String sessionId,
+            required String eventType,
+            Value<String?> species = const Value.absent(),
+            Value<int> quantity = const Value.absent(),
+            required DateTime timestamp,
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionLogCompanion.insert(
+            id: id,
+            sessionId: sessionId,
+            eventType: eventType,
+            species: species,
+            quantity: quantity,
+            timestamp: timestamp,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$SessionLogTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (sessionId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.sessionId,
+                    referencedTable:
+                        $$SessionLogTableReferences._sessionIdTable(db),
+                    referencedColumn:
+                        $$SessionLogTableReferences._sessionIdTable(db).id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$SessionLogTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SessionLogTable,
+    SessionLogData,
+    $$SessionLogTableFilterComposer,
+    $$SessionLogTableOrderingComposer,
+    $$SessionLogTableAnnotationComposer,
+    $$SessionLogTableCreateCompanionBuilder,
+    $$SessionLogTableUpdateCompanionBuilder,
+    (SessionLogData, $$SessionLogTableReferences),
+    SessionLogData,
+    PrefetchHooks Function({bool sessionId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -2902,4 +4684,8 @@ class $AppDatabaseManager {
       $$SpotsTableTableManager(_db, _db.spots);
   $$ProfilesTableTableManager get profiles =>
       $$ProfilesTableTableManager(_db, _db.profiles);
+  $$SessionCatchTableTableManager get sessionCatch =>
+      $$SessionCatchTableTableManager(_db, _db.sessionCatch);
+  $$SessionLogTableTableManager get sessionLog =>
+      $$SessionLogTableTableManager(_db, _db.sessionLog);
 }

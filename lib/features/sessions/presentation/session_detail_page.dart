@@ -4,6 +4,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'new_session_page.dart';
 import '../../../database/app_database.dart';
 import '../../../core/t.dart';
+import 'live_session_page.dart';
 
 class SessionDetailPage extends StatefulWidget {
     final FishingSession session;
@@ -25,6 +26,7 @@ class _SessionDetailPageState
     extends State<SessionDetailPage> {
 
       late FishingSession session;
+      List<SessionCatchData> catches = [];
 
 @override
 void initState() {
@@ -32,9 +34,21 @@ void initState() {
 
   session = widget.session;
 
+loadCatches();
+
   WidgetsBinding.instance.addPostFrameCallback((_) {
     aggiornaMeteoSeNecessario();
   });
+}
+
+Future<void> loadCatches() async {
+  catches = await widget.database.getSessionCatches(
+    session.id,
+  );
+
+  if (mounted) {
+    setState(() {});
+  }
 }
 
 Future<void> aggiornaMeteoSeNecessario() async {
@@ -303,8 +317,63 @@ Future<void> aggiornaMeteoSeNecessario() async {
                       ],
                     ),
                   const SizedBox(
-                    height: 20,
+                    height: 8,
                   ),
+
+if (catches.isNotEmpty)
+  Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      const SizedBox(height: 10),
+
+      Text(
+        "🎣 ${T.catches}",
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+
+      const SizedBox(height: 8),
+
+      Container(
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: Colors.grey.shade300,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            children: catches.map((c) {
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(c.species),
+                    ),
+                    Text(
+                      c.quantity.toString(),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+
+
+
+            }).toList(),
+          ),
+        ),
+      ),
+
+      const SizedBox(height: 8),
+    ],
+  ),
+
                   if (session.note != null && session.note!.isNotEmpty)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -329,8 +398,35 @@ Future<void> aggiornaMeteoSeNecessario() async {
               ),
             ),
           ),
+          const SizedBox(height: 20),
+
+          SizedBox(
+            width: double.infinity,
+            height: 55,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.play_arrow),
+              label: const Text(
+                "🎣 INIZIA PESCATA",
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LiveSessionPage(
+                      database: widget.database,
+                      session: session,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
         ],
       ),
     );
-  }
+      }
 }

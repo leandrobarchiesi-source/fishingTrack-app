@@ -14,6 +14,7 @@ import 'core/app_settings.dart';
 import 'features/settings/presentation/settings_page.dart';
 import 'services/sync_service.dart';
 import 'services/connectivity_service.dart';
+import 'features/sessions/presentation/new_session_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ void main() async {
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2a3pta2tlY3dibWltYnZja3NvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg3MTcwODksImV4cCI6MjA5NDI5MzA4OX0.6IsjDm5egHBpDw04Z5CUvNGGUKeCY3BGtpJIyhy1qXg',
   );
 
+await Supabase.instance.client.auth.signOut();
 await AppSettings.load();
 await ConnectivityService.initialize();
 
@@ -209,8 +211,8 @@ Future<void> refreshDashboard() async {
           final result = await Navigator.push(
   context,
   MaterialPageRoute(
-    builder: (_) => SettingsPage(
-      database: database,
+builder: (_) => NewSessionPage(
+        database: database,
     ),
   ),
 );

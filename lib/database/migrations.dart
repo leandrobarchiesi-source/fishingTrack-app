@@ -4,8 +4,12 @@ import 'app_database.dart';
 
 MigrationStrategy buildMigration(AppDatabase db) {
   return MigrationStrategy(
+    onCreate: (Migrator m) async {
+      await m.createAll();
+    },
+
     onUpgrade: (Migrator m, int from, int to) async {
-      if (from < 2) {
+            if (from < 2) {
         await m.addColumn(
           db.fishingSessions,
           db.fishingSessions.synced,
@@ -56,6 +60,30 @@ MigrationStrategy buildMigration(AppDatabase db) {
           db.spots.deletedAt,
         );
       }
+
+      if (from < 9) {
+        await m.createTable(
+          db.sessionCatch,
+        );
+      }
+
+      if (from < 12) {
+  await m.createTable(
+    db.sessionLog,
+  );
+}
+
+  //    if (from < 10) {
+  //      await m.addColumn(
+  //        db.sessionCatch,
+  //        db.sessionCatch.synced,
+  //       );
+
+  //      await m.addColumn(
+  //        db.sessionCatch,
+  //        db.sessionCatch.deletedAt,
+  //       );
+  //    }
     },
   );
 }
