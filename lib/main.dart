@@ -19,6 +19,10 @@ import 'features/sessions/presentation/new_session_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await SystemChrome.setPreferredOrientations([
+  DeviceOrientation.portraitUp,
+]);
+
   await Supabase.initialize(
     url: 'https://yvkzmkkecwbmimbvckso.supabase.co',
     anonKey:

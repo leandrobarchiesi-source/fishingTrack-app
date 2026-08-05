@@ -5,6 +5,7 @@ import 'new_session_page.dart';
 import '../../../database/app_database.dart';
 import '../../../core/t.dart';
 import 'live_session_page.dart';
+import '../../../core/session_constants.dart';
 
 class SessionDetailPage extends StatefulWidget {
     final FishingSession session;
@@ -121,30 +122,7 @@ Future<void> aggiornaMeteoSeNecessario() async {
           T.sessionSummary,
         ),
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.edit,
-            ),
-            onPressed: () async {
-              final result = await Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => NewSessionPage(
-                    database: widget.database,
-                    session: widget.session,
-                  ),
-                ),
-              );
-
-              if (context.mounted && result == true) {
-                Navigator.pop(
-                  context,
-                  true,
-                );
-              }
-            },
-          ),
-          IconButton(
+                    IconButton(
             icon: const Icon(
               Icons.delete,
             ),
@@ -201,7 +179,27 @@ Future<void> aggiornaMeteoSeNecessario() async {
               }
             },
           ),
-        ],
+        
+
+if (session.mode == SessionMode.standard)
+  IconButton(
+    icon: const Icon(Icons.edit),
+    onPressed: () async {
+      final result = await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => NewSessionPage(
+            database: widget.database,
+            session: session,
+          ),
+        ),
+      );
+
+      if (context.mounted && result == true) {
+        Navigator.pop(context, true);
+      }
+    },
+  ),        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -222,30 +220,35 @@ Future<void> aggiornaMeteoSeNecessario() async {
                   const SizedBox(
                     height: 20,
                   ),
-                  Text(
-                    "🎣 ${T.sessionType(session.tipoPescata)}",
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    "📅 ${formatDate(session.data)}",
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    "🕒 ${formatTime(session.oraInizio)} → ${formatTime(session.oraFine)}",
-                  ),
-                  const SizedBox(
-                    height: 10,
-                  ),
-                  Text(
-                    "${T.duration}: ${ore}h ${minuti}m",
-                  ),
-                  const SizedBox(
-                    height: 20,
-                  ),
+Text(
+  "🎣 ${T.sessionType(session.tipoPescata)}",
+),
+
+if (session.mode == SessionMode.standard ||
+    session.status == SessionStatus.completed) ...[
+  const SizedBox(
+    height: 10,
+  ),
+  Text(
+    "📅 ${formatDate(session.data)}",
+  ),
+  const SizedBox(
+    height: 10,
+  ),
+  Text(
+    "🕒 ${formatTime(session.oraInizio)} → ${formatTime(session.oraFine)}",
+  ),
+  const SizedBox(
+    height: 10,
+  ),
+  Text(
+    "${T.duration}: ${ore}h ${minuti}m",
+  ),
+],
+
+const SizedBox(
+  height: 20,
+),
                   if (session.latitudine != null)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,6 +281,9 @@ Future<void> aggiornaMeteoSeNecessario() async {
                         const SizedBox(
                           height: 20,
                         ),
+
+                        if (session.mode == SessionMode.standard ||
+    session.status == SessionStatus.completed) ...[
                         Text(
                           "🌤 ${T.weather}",
                           style: const TextStyle(
@@ -314,6 +320,7 @@ Future<void> aggiornaMeteoSeNecessario() async {
                               session.faseLunare!,
                             ),
                           ),
+    ],
                       ],
                     ),
                   const SizedBox(
@@ -400,32 +407,32 @@ if (catches.isNotEmpty)
           ),
           const SizedBox(height: 20),
 
-          SizedBox(
-            width: double.infinity,
-            height: 55,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.play_arrow),
-              label: const Text(
-                "🎣 INIZIA PESCATA",
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LiveSessionPage(
-                      database: widget.database,
-                      session: session,
-                    ),
-                  ),
-                );
-              },
+if (session.mode == SessionMode.live &&
+    session.status == SessionStatus.planned)
+  SizedBox(
+    width: double.infinity,
+    height: 55,
+    child: ElevatedButton(
+      onPressed: () async {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => LiveSessionPage(
+              database: widget.database,
+              session: session,
             ),
           ),
-        ],
+        );
+      },
+      child: const Text(
+        "APRI LIVE",
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    ),
+  ),        ],
       ),
     );
       }

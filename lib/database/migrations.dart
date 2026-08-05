@@ -71,6 +71,18 @@ MigrationStrategy buildMigration(AppDatabase db) {
   await m.createTable(
     db.sessionLog,
   );
+
+  if (from < 13) {
+  await m.addColumn(
+    db.fishingSessions,
+    db.fishingSessions.mode,
+  );
+
+  await m.addColumn(
+    db.fishingSessions,
+    db.fishingSessions.status,
+  );
+}
 }
 
   //    if (from < 10) {

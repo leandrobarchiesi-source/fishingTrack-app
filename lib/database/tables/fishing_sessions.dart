@@ -40,6 +40,10 @@ class FishingSessions extends Table {
 
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
+  TextColumn get mode => text().withDefault(const Constant("standard"),)();
+
+  TextColumn get status => text().withDefault(const Constant("completed"),)();
+
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();

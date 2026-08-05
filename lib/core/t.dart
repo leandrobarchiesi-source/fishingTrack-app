@@ -905,4 +905,39 @@ static String get addSpecies => _tr(
       es: 'Añadir especie',
     );
 
+static String get sessionMode => _tr(
+      it: 'Modalità sessione',
+      en: 'Session mode',
+      fr: 'Mode de session',
+      es: 'Modo de sesión',
+    );
+
+static String get summaryMode => _tr(
+      it: 'Riepilogo',
+      en: 'Summary',
+      fr: 'Résumé',
+      es: 'Resumen',
+    );
+
+static String get liveMode => _tr(
+      it: 'Live',
+      en: 'Live',
+      fr: 'Live',
+      es: 'Live',
+    );
+
+static String get select => _tr(
+      it: 'Seleziona...',
+      en: 'Select...',
+      fr: 'Sélectionner...',
+      es: 'Seleccionar...',
+    );
+
+static String get startSession => _tr(
+      it: 'Inizia sessione',
+      en: 'Start session',
+      fr: 'Démarrer la session',
+      es: 'Iniciar sesión',
+    );
+
 }

@@ -119,6 +119,20 @@ class $FishingSessionsTable extends FishingSessions
   late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
       'deleted_at', aliasedName, true,
       type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+      'mode', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant("standard"));
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+      'status', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant("completed"));
   static const VerificationMeta _createdAtMeta =
       const VerificationMeta('createdAt');
   @override
@@ -152,6 +166,8 @@ class $FishingSessionsTable extends FishingSessions
         faseLunare,
         synced,
         deletedAt,
+        mode,
+        status,
         createdAt,
         updatedAt
       ];
@@ -268,6 +284,14 @@ class $FishingSessionsTable extends FishingSessions
       context.handle(_deletedAtMeta,
           deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
     }
+    if (data.containsKey('mode')) {
+      context.handle(
+          _modeMeta, mode.isAcceptableOrUnknown(data['mode']!, _modeMeta));
+    }
+    if (data.containsKey('status')) {
+      context.handle(_statusMeta,
+          status.isAcceptableOrUnknown(data['status']!, _statusMeta));
+    }
     if (data.containsKey('created_at')) {
       context.handle(_createdAtMeta,
           createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
@@ -327,6 +351,10 @@ class $FishingSessionsTable extends FishingSessions
           .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
       deletedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+      mode: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}mode'])!,
+      status: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}status'])!,
       createdAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
@@ -360,6 +388,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
   final String? faseLunare;
   final bool synced;
   final DateTime? deletedAt;
+  final String mode;
+  final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
   const FishingSession(
@@ -382,6 +412,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       this.faseLunare,
       required this.synced,
       this.deletedAt,
+      required this.mode,
+      required this.status,
       required this.createdAt,
       required this.updatedAt});
   @override
@@ -428,6 +460,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
     if (!nullToAbsent || deletedAt != null) {
       map['deleted_at'] = Variable<DateTime>(deletedAt);
     }
+    map['mode'] = Variable<String>(mode);
+    map['status'] = Variable<String>(status);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
     return map;
@@ -472,6 +506,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       deletedAt: deletedAt == null && nullToAbsent
           ? const Value.absent()
           : Value(deletedAt),
+      mode: Value(mode),
+      status: Value(status),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
     );
@@ -500,6 +536,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       faseLunare: serializer.fromJson<String?>(json['faseLunare']),
       synced: serializer.fromJson<bool>(json['synced']),
       deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+      mode: serializer.fromJson<String>(json['mode']),
+      status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
     );
@@ -527,6 +565,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       'faseLunare': serializer.toJson<String?>(faseLunare),
       'synced': serializer.toJson<bool>(synced),
       'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+      'mode': serializer.toJson<String>(mode),
+      'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
     };
@@ -552,6 +592,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           Value<String?> faseLunare = const Value.absent(),
           bool? synced,
           Value<DateTime?> deletedAt = const Value.absent(),
+          String? mode,
+          String? status,
           DateTime? createdAt,
           DateTime? updatedAt}) =>
       FishingSession(
@@ -576,6 +618,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
         faseLunare: faseLunare.present ? faseLunare.value : this.faseLunare,
         synced: synced ?? this.synced,
         deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+        mode: mode ?? this.mode,
+        status: status ?? this.status,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
       );
@@ -608,6 +652,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           data.faseLunare.present ? data.faseLunare.value : this.faseLunare,
       synced: data.synced.present ? data.synced.value : this.synced,
       deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      status: data.status.present ? data.status.value : this.status,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
     );
@@ -635,6 +681,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           ..write('faseLunare: $faseLunare, ')
           ..write('synced: $synced, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('mode: $mode, ')
+          ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt')
           ..write(')'))
@@ -662,6 +710,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
         faseLunare,
         synced,
         deletedAt,
+        mode,
+        status,
         createdAt,
         updatedAt
       ]);
@@ -688,6 +738,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           other.faseLunare == this.faseLunare &&
           other.synced == this.synced &&
           other.deletedAt == this.deletedAt &&
+          other.mode == this.mode &&
+          other.status == this.status &&
           other.createdAt == this.createdAt &&
           other.updatedAt == this.updatedAt);
 }
@@ -712,6 +764,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
   final Value<String?> faseLunare;
   final Value<bool> synced;
   final Value<DateTime?> deletedAt;
+  final Value<String> mode;
+  final Value<String> status;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
   final Value<int> rowid;
@@ -735,6 +789,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     this.faseLunare = const Value.absent(),
     this.synced = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
     this.rowid = const Value.absent(),
@@ -759,6 +815,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     this.faseLunare = const Value.absent(),
     this.synced = const Value.absent(),
     this.deletedAt = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.status = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
     this.rowid = const Value.absent(),
@@ -791,6 +849,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     Expression<String>? faseLunare,
     Expression<bool>? synced,
     Expression<DateTime>? deletedAt,
+    Expression<String>? mode,
+    Expression<String>? status,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
     Expression<int>? rowid,
@@ -815,6 +875,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       if (faseLunare != null) 'fase_lunare': faseLunare,
       if (synced != null) 'synced': synced,
       if (deletedAt != null) 'deleted_at': deletedAt,
+      if (mode != null) 'mode': mode,
+      if (status != null) 'status': status,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
       if (rowid != null) 'rowid': rowid,
@@ -841,6 +903,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       Value<String?>? faseLunare,
       Value<bool>? synced,
       Value<DateTime?>? deletedAt,
+      Value<String>? mode,
+      Value<String>? status,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
       Value<int>? rowid}) {
@@ -864,6 +928,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       faseLunare: faseLunare ?? this.faseLunare,
       synced: synced ?? this.synced,
       deletedAt: deletedAt ?? this.deletedAt,
+      mode: mode ?? this.mode,
+      status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       rowid: rowid ?? this.rowid,
@@ -930,6 +996,12 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     if (deletedAt.present) {
       map['deleted_at'] = Variable<DateTime>(deletedAt.value);
     }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
     if (createdAt.present) {
       map['created_at'] = Variable<DateTime>(createdAt.value);
     }
@@ -964,6 +1036,8 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
           ..write('faseLunare: $faseLunare, ')
           ..write('synced: $synced, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('mode: $mode, ')
+          ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('rowid: $rowid')
@@ -2977,6 +3051,8 @@ typedef $$FishingSessionsTableCreateCompanionBuilder = FishingSessionsCompanion
   Value<String?> faseLunare,
   Value<bool> synced,
   Value<DateTime?> deletedAt,
+  Value<String> mode,
+  Value<String> status,
   required DateTime createdAt,
   required DateTime updatedAt,
   Value<int> rowid,
@@ -3002,6 +3078,8 @@ typedef $$FishingSessionsTableUpdateCompanionBuilder = FishingSessionsCompanion
   Value<String?> faseLunare,
   Value<bool> synced,
   Value<DateTime?> deletedAt,
+  Value<String> mode,
+  Value<String> status,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
   Value<int> rowid,
@@ -3109,6 +3187,12 @@ class $$FishingSessionsTableFilterComposer
 
   ColumnFilters<DateTime> get deletedAt => $composableBuilder(
       column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get mode => $composableBuilder(
+      column: $table.mode, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnFilters(column));
@@ -3226,6 +3310,12 @@ class $$FishingSessionsTableOrderingComposer
   ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
       column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get mode => $composableBuilder(
+      column: $table.mode, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get status => $composableBuilder(
+      column: $table.status, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<DateTime> get createdAt => $composableBuilder(
       column: $table.createdAt, builder: (column) => ColumnOrderings(column));
 
@@ -3298,6 +3388,12 @@ class $$FishingSessionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get deletedAt =>
       $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
 
   GeneratedColumn<DateTime> get createdAt =>
       $composableBuilder(column: $table.createdAt, builder: (column) => column);
@@ -3391,6 +3487,8 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             Value<String?> faseLunare = const Value.absent(),
             Value<bool> synced = const Value.absent(),
             Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> mode = const Value.absent(),
+            Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
             Value<int> rowid = const Value.absent(),
@@ -3415,6 +3513,8 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             faseLunare: faseLunare,
             synced: synced,
             deletedAt: deletedAt,
+            mode: mode,
+            status: status,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,
@@ -3439,6 +3539,8 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             Value<String?> faseLunare = const Value.absent(),
             Value<bool> synced = const Value.absent(),
             Value<DateTime?> deletedAt = const Value.absent(),
+            Value<String> mode = const Value.absent(),
+            Value<String> status = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
             Value<int> rowid = const Value.absent(),
@@ -3463,6 +3565,8 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             faseLunare: faseLunare,
             synced: synced,
             deletedAt: deletedAt,
+            mode: mode,
+            status: status,
             createdAt: createdAt,
             updatedAt: updatedAt,
             rowid: rowid,

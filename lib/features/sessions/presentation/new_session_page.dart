@@ -13,18 +13,16 @@ import '../../../services/connectivity_service.dart';
 import '../../spots/presentation/spot_selection_page.dart';
 import '../../../core/t.dart';
 import '../../../core/gps/gps_service.dart';
+import '../../../core/session_constants.dart';
+import 'widgets/location_section.dart';
+import 'widgets/weather_section.dart';
+import 'widgets/datetime_section.dart';
+import 'widgets/notes_section.dart';
+import '../models/catch_row.dart';
+import 'widgets/catch_row_widget.dart';
 
 const uuid = Uuid();
 
-class CatchRow {
-  String? species;
-  int quantity;
-
-  CatchRow({
-    this.species,
-    this.quantity = 0,
-  });
-}
 
 class NewSessionPage extends StatefulWidget {
   final AppDatabase database;
@@ -89,6 +87,7 @@ bool gpsSearching = false;
   String? selectedSpotId;
   String? selectedSpotNome;
 
+String? sessionMode;
 
   @override
   void initState() {
@@ -110,6 +109,9 @@ bool gpsSearching = false;
       text: s?.temperaturaAcqua?.toString() ?? '',
     );
     if (s != null) {
+
+      sessionMode = s.mode;
+
       tipoPescata = s.tipoPescata;
 
       data = s.data;
@@ -234,7 +236,9 @@ Future<void> loadSessionCatches() async {
         );
       });
 
-      await aggiornaMeteo();
+if (sessionMode == SessionMode.standard) {
+  await aggiornaMeteo();
+}
     }
   }
 
@@ -257,7 +261,9 @@ Future<void> loadSessionCatches() async {
     });
 
     if (inizio) {
-      await aggiornaMeteo();
+if (sessionMode == SessionMode.standard) {
+  await aggiornaMeteo();
+}
     }
   }
 
@@ -379,7 +385,9 @@ if (selectedSpotId == null && online) {
 }
 }
       try {
-        await aggiornaMeteo();
+if (sessionMode == SessionMode.standard) {
+  await aggiornaMeteo();
+}
       } catch (_) {
         // offline: ignora
       }
@@ -427,7 +435,9 @@ content: Text(
         setState(() {});
       }
 
-      await aggiornaMeteo();
+      if (sessionMode == SessionMode.standard) {
+        await aggiornaMeteo();
+      }
 
       return;
     }
@@ -461,7 +471,9 @@ content: Text(
           "Spot ${latitudine!.toStringAsFixed(4)}, ${longitudine!.toStringAsFixed(4)}";
     }
 
-    await aggiornaMeteo();
+    if (sessionMode == SessionMode.standard) {
+      await aggiornaMeteo();
+    }
 
     if (mounted) {
       setState(() {});
@@ -499,55 +511,6 @@ if (mounted) {
 } 
 }
 
-Widget buildSpeciesField(CatchRow catchRow) {
-  return SizedBox(
-    height: 46,
-    child: Autocomplete<String>(
-      initialValue: TextEditingValue(
-        text: catchRow.species ?? '',
-      ),
-      optionsBuilder: (textEditingValue) {
-        if (textEditingValue.text.isEmpty) {
-          return availableSpecies;
-        }
-
-        return availableSpecies.where(
-          (s) => s.toLowerCase().contains(
-                textEditingValue.text.toLowerCase(),
-              ),
-        );
-      },
-      onSelected: (value) {
-        catchRow.species = value;
-      },
-      fieldViewBuilder: (
-        context,
-        controller,
-        focusNode,
-        onFieldSubmitted,
-      ) {
-        return TextField(
-          controller: controller,
-          focusNode: focusNode,
-          decoration: InputDecoration(
-            hintText: T.species,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 12,
-              vertical: 10,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          onChanged: (value) {
-            catchRow.species = value;
-          },
-        );
-      },
-    ),
-  );
-}
-
 Future<void> saveSession() async {
   if (luogoController.text.trim().isEmpty) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -557,6 +520,15 @@ Future<void> saveSession() async {
     );
     return;
   }
+
+if (sessionMode == null) {
+  ScaffoldMessenger.of(context).showSnackBar(
+    SnackBar(
+      content: Text(T.select),
+    ),
+  );
+  return;
+}
 
   try {
     setState(() {
@@ -636,6 +608,11 @@ Future<void> saveSession() async {
           pressione: Value(pressione),
           condizioni: Value(condizioni),
           faseLunare: Value(faseLunare),
+          mode: Value(sessionMode!),
+          status: Value(
+          sessionMode == SessionMode.live
+            ? SessionStatus.planned
+            : SessionStatus.completed,),
           note: Value(noteController.text),
           createdAt: DateTime.now().toUtc(),
           updatedAt: DateTime.now().toUtc(),
@@ -660,6 +637,10 @@ Future<void> saveSession() async {
           pressione: Value(pressione),
           condizioni: Value(condizioni),
           faseLunare: Value(faseLunare),
+          mode: sessionMode,
+          status: sessionMode == SessionMode.live
+            ? SessionStatus.planned
+            : SessionStatus.completed,
           note: Value(noteController.text),
           updatedAt: DateTime.now().toUtc(),
         ),
@@ -729,258 +710,24 @@ await widget.database.saveSessionCatch(
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-            TextField(
-              controller: luogoController,
-              decoration: InputDecoration(
-                labelText: T.location,
-              ),
-            ),
-if (gpsAccuracy != null || gpsSearching)
-  Card(
-    margin: const EdgeInsets.only(bottom: 12),
-    child: Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "📡 GPS",
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
+LocationSection(
+  luogoController: luogoController,
+  gpsAccuracy: gpsAccuracy,
+  gpsSearching: gpsSearching,
+  gpsSpotName: gpsSpotName,
+  gpsSpotDistance: gpsSpotDistance,
+  onCurrentLocation: usaPosizioneAttuale,
+  onSelectLocation: () async {
+    final online = await ConnectivityService.isOnline();
 
-          const SizedBox(height: 8),
-
-if (gpsSearching)
-  Row(
-    children: [
-      const SizedBox(
-        width: 18,
-        height: 18,
-        child: CircularProgressIndicator(strokeWidth: 2),
-      ),
-      const SizedBox(width: 10),
-      Text(T.searchingPosition),
-    ],
-  ),
-  
-if (gpsAccuracy != null) ...[
-  const SizedBox(height: 8),
-  Text(
-    T.accuracy(gpsAccuracy!),
-  ),
-],
-          if (gpsSpotName != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              "📍 Spot: $gpsSpotName",
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-
-if (gpsSpotDistance != null)
-  Text(
-    T.distance(gpsSpotDistance!),
-  ),
-          if (!gpsSearching &&
-              gpsAccuracy != null &&
-              gpsSpotName == null)
-            Padding(
-              padding: const EdgeInsets.only(top: 8),
-              child: Text(
-                "⚠ ${T.noNearbySpot}",
-              ),
-            ),
-          ],
-        ),
-    ),
-  ),
-              const SizedBox(
-              height: 16,
-            ),
-            ElevatedButton.icon(
-              onPressed: usaPosizioneAttuale,
-              icon: const Icon(
-                Icons.location_on,
-              ),
-              label: Text(
-                T.useCurrentLocation,
-              ),
-            ),
-            const SizedBox(
-              height: 10,
-            ),
-            FutureBuilder<bool>(
-              future: ConnectivityService.isOnline(),
-              builder: (context, snapshot) {
-                final online = snapshot.data ?? false;
-
-                return ElevatedButton.icon(
-                  onPressed: online ? scegliDaMappa : scegliDaLista,
-                  icon: Icon(
-                    online ? Icons.map : Icons.list,
-                  ),
-                  label: Text(
-                    online ? T.selectFromMap : T.selectFromList,
-                  ),
-                );
-              },
-            ),
-            const SizedBox(
-              height: 16,
-            ),
-if (temperatura != null) ...[
-  Row(
-    children: [
-      const Icon(
-        Icons.thermostat,
-        color: Colors.redAccent,
-        size: 20,
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Text(
-          T.airTemperature,
-          style: const TextStyle(fontSize: 16),
-        ),
-      ),
-      Text(
-        "${temperatura!.toStringAsFixed(1)} °C",
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ],
-  ),
-  const SizedBox(height: 12),
-],
-
-Row(
-  children: [
-    const Icon(
-      Icons.water_drop,
-      color: Color(0xFF29B6F6),
-      size: 20,
-    ),
-    const SizedBox(width: 10),
-    Expanded(
-      child: Text(
-        T.waterTemperature,
-        style: const TextStyle(
-          fontSize: 16,
-        ),
-      ),
-    ),
-    SizedBox(
-      width: 72,
-      child: TextField(
-        controller: temperaturaAcquaController,
-        keyboardType: const TextInputType.numberWithOptions(
-          decimal: true,
-        ),
-    textAlign: TextAlign.center,
-    textAlignVertical: TextAlignVertical.center,
-            style: const TextStyle(
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
-        ),
-        decoration: InputDecoration(
-          isDense: true,
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 4,
-            horizontal: 6,
-          ),
-          suffixText: "°",
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(8),
-          ),
-        ),
-      ),
-    ),
-  ],
+    if (online) {
+      await scegliDaMappa();
+    } else {
+      await scegliDaLista();
+    }
+  },
 ),
-
-if (vento != null) ...[
-  const SizedBox(height: 12),
-  Row(
-    children: [
-      const Icon(
-        Icons.air,
-        color: Colors.blueGrey,
-        size: 20,
-      ),
-      const SizedBox(width: 10),
-       Expanded(
-        child: Text(
-          T.wind,
-          style: TextStyle(fontSize: 16),
-        ),
-      ),
-      Text(
-        vento!,
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ],
-  ),
-],
-
-if (pressione != null) ...[
-  const SizedBox(height: 12),
-  Row(
-    children: [
-      const Icon(
-        Icons.speed,
-        color: Colors.orange,
-        size: 20,
-      ),
-      const SizedBox(width: 10),
-       Expanded(
-        child: Text(
-          T.pressure,
-          style: TextStyle(fontSize: 16),
-        ),
-      ),
-      Text(
-        "$pressione hPa",
-        style: const TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-    ],
-  ),
-],
-
-if (faseLunare != null) ...[
-  const SizedBox(height: 12),
-  Row(
-    children: [
-      const Icon(
-        Icons.nightlight_round,
-        color: Colors.indigo,
-        size: 20,
-      ),
-      const SizedBox(width: 10),
-      Expanded(
-        child: Text(
-          T.moonPhase(faseLunare!),
-          style: const TextStyle(
-            fontSize: 16,
-          ),
-        ),
-      ),
-    ],
-  ),
-],
-
+          
 const SizedBox(height: 16),
             DropdownButtonFormField<String>(
               initialValue: tipoPescata,
@@ -1025,166 +772,83 @@ const SizedBox(height: 16),
                 labelText: T.fishingType,
               ),
             ),
+
             const SizedBox(height: 16),
-Row(
-  children: [
-    Expanded(
-      child: InkWell(
-        onTap: selezionaData,
-        borderRadius: BorderRadius.circular(12),
-        child: 
-Card(
-    elevation: 2,
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(18),
-    ),
-              child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 14,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-children: [
-  const Icon(
-    Icons.calendar_month,
-    color: Colors.deepPurple,
-    size: 26,
+
+DropdownButtonFormField<String>(
+  value: sessionMode,
+  decoration: const InputDecoration(
+    labelText: "Modalità sessione",
   ),
-
-  const SizedBox(height: 10),
-
-  Text(
-    "${data.day.toString().padLeft(2, '0')}/"
-    "${data.month.toString().padLeft(2, '0')}/"
-    "${data.year.toString().substring(2)}",
-    style: const TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
+  items: const [
+    DropdownMenuItem(
+      value: SessionMode.standard,
+      child: Text("Standard"),
     ),
-  ),
-],
-            ),
-          ),
-        ),
-      ),
-    ),
-
-    const SizedBox(width: 10),
-
-    Expanded(
-      child: InkWell(
-        onTap: () => selezionaOra(true),
-        borderRadius: BorderRadius.circular(12),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 14,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-children: [
-  const Icon(
-    Icons.schedule,
-    color: Colors.deepPurple,
-    size: 26,
-  ),
-
-  const SizedBox(height: 10),
-
-  Text(
-    oraInizio.format(context),
-    style: const TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-],
-            ),
-          ),
-        ),
-      ),
-    ),
-
-    const SizedBox(width: 10),
-
-    Expanded(
-      child: InkWell(
-        onTap: () => selezionaOra(false),
-        borderRadius: BorderRadius.circular(12),
-        child: Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              vertical: 16,
-              horizontal: 14,
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-children: [
-  const Icon(
-    Icons.schedule,
-    color: Colors.deepPurple,
-    size: 26,
-  ),
-
-  const SizedBox(height: 10),
-
-  Text(
-    oraFine.format(context),
-    style: const TextStyle(
-      fontSize: 15,
-      fontWeight: FontWeight.w600,
-    ),
-  ),
-],
-            ),
-          ),
-        ),
-      ),
+    DropdownMenuItem(
+      value: SessionMode.live,
+      child: Text("Live"),
     ),
   ],
-),
- const SizedBox(height: 10),
- 
-TextField(
-  controller: noteController,
-  minLines: 3,
-  maxLines: 3,
-  decoration: InputDecoration(
-    labelText: T.notes,
-    alignLabelWithHint: true,
-    filled: true,
-    fillColor: Colors.grey.shade100,
-    contentPadding: const EdgeInsets.all(16),
-    border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-    enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(
-        color: Colors.grey.shade300,
-      ),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: const BorderSide(
-        color: Colors.deepPurple,
-        width: 2,
-      ),
-    ),
-  ),
+  
+onChanged: (value) async {
+  setState(() {
+    sessionMode = value!;
+  });
+
+  
+
+  if (sessionMode == SessionMode.standard &&
+      latitudine != null &&
+      longitudine != null) {
+if (sessionMode == SessionMode.standard) {
+  await aggiornaMeteo();
+}
+  }
+  
+},
+
 ),
 
+const SizedBox(height: 16),
+
+            if (sessionMode == SessionMode.standard) ...[
+
+              WeatherSection(
+  temperatura: temperatura,
+  temperaturaAcquaController: temperaturaAcquaController,
+  vento: vento,
+  pressione: pressione,
+  faseLunare: faseLunare,
+),
+
+            ],
+
+
+const SizedBox(height: 16),
+
+if (sessionMode == SessionMode.standard) ...[
+  DateTimeSection(
+    data: data,
+    oraInizio: oraInizio,
+    oraFine: oraFine,
+    onSelectDate: selezionaData,
+    onSelectStart: () => selezionaOra(true),
+    onSelectEnd: () => selezionaOra(false),
+  ),
+],
+ const SizedBox(height: 10),
+
+ if (sessionMode == SessionMode.standard) ...[
+ 
+NotesSection(
+  controller: noteController,
+),
+ ],
+
 const SizedBox(height: 20),
+
+if (sessionMode == SessionMode.standard) ...[
 
 Card(
   elevation: 1,
@@ -1225,80 +889,30 @@ Card(
             itemBuilder: (context, index) {
               final catchRow = catches[index];
 
-return Row(
-  children: [
-    Expanded(
-      child: buildSpeciesField(catchRow),
-    ),
+return CatchRowWidget(
+  catchRow: catchRow,
+  availableSpecies: availableSpecies,
 
-    const SizedBox(width: 8),
+  onRemove: () {
+    setState(() {
+      if (catchRow.quantity > 0) {
+        catchRow.quantity--;
+      }
+    });
+  },
 
-    IconButton(
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      icon: const Icon(
-        Icons.remove_circle_outline,
-        size: 22,
-      ),
-      onPressed: () {
-        setState(() {
-          if (catchRow.quantity > 0) {
-            catchRow.quantity--;
-          }
-        });
-      },
-    ),
+  onAdd: () {
+    setState(() {
+      catchRow.quantity++;
+    });
+  },
 
-    SizedBox(
-      width: 24,
-      child: Center(
-        child: Text(
-          catchRow.quantity.toString(),
-          style: const TextStyle(
-            fontWeight: FontWeight.w600,
-            fontSize: 16,
-          ),
-        ),
-      ),
-    ),
-
-    IconButton(
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      icon: const Icon(
-        Icons.add_circle_outline,
-        size: 22,
-      ),
-      onPressed: () {
-        setState(() {
-          catchRow.quantity++;
-        });
-      },
-    ),
-
-    const SizedBox(width: 4),
-
-    IconButton(
-      visualDensity: VisualDensity.compact,
-      padding: EdgeInsets.zero,
-      constraints: const BoxConstraints(),
-      icon: const Icon(
-        Icons.close,
-        color: Colors.red,
-        size: 20,
-      ),
-      tooltip: T.delete,
-      onPressed: () {
-        setState(() {
-          catches.removeAt(index);
-        });
-      },
-    ),
-  ],
-);
-   },
+  onDelete: () {
+    setState(() {
+      catches.removeAt(index);
+    });
+  },
+);   },
           ),
         ],
 
@@ -1319,6 +933,8 @@ return Row(
     ),
   ),
 ),
+],
+
 const SizedBox(height: 10),
 
 SizedBox(
