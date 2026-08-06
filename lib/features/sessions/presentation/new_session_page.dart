@@ -20,6 +20,9 @@ import 'widgets/datetime_section.dart';
 import 'widgets/notes_section.dart';
 import '../models/catch_row.dart';
 import 'widgets/catch_row_widget.dart';
+import 'widgets/catches_section.dart';
+import 'widgets/fishing_type_section.dart';
+import 'widgets/session_buttons.dart';
 
 const uuid = Uuid();
 
@@ -651,6 +654,9 @@ if (sessionMode == null) {
 
     await widget.database.deleteSessionCatches(sessionId);
 
+    final test = await widget.database.getSessionCatches(sessionId);
+debugPrint("DOPO DELETE: ${test.length}");
+
     for (final c in catches) {
       if (c.species == null || c.species!.trim().isEmpty) continue;
 
@@ -664,6 +670,9 @@ await widget.database.saveSessionCatch(
     quantity: Value(c.quantity),
   ),
 );
+
+final test2 = await widget.database.getSessionCatches(sessionId);
+debugPrint("DOPO INSERT: ${test2.length}");
     }
 
     if (!mounted) return;
@@ -729,50 +738,16 @@ LocationSection(
 ),
           
 const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              initialValue: tipoPescata,
-              items: [
-                DropdownMenuItem(
-                  value: 'Gara',
-                  child: Text(
-                    T.sessionType('Gara'),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Test-Match',
-                  child: Text(
-                    T.sessionType('Test-Match'),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Pool',
-                  child: Text(
-                    T.sessionType('Pool'),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Prova',
-                  child: Text(
-                    T.sessionType('Prova'),
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'Libera',
-                  child: Text(
-                    T.sessionType('Libera'),
-                  ),
-                ),
-              ],
-              onChanged: (v) {
-                setState(() {
-                  tipoPescata = v!;
-                });
-              },
-              decoration: InputDecoration(
-                labelText: T.fishingType,
-              ),
-            ),
+FishingTypeSection(
+  tipoPescata: tipoPescata,
+  onChanged: (value) {
+    setState(() {
+      tipoPescata = value;
+    });
+  },
+),
 
+const SizedBox(height: 16),
             const SizedBox(height: 16),
 
 DropdownButtonFormField<String>(
@@ -849,113 +824,45 @@ NotesSection(
 const SizedBox(height: 20),
 
 if (sessionMode == SessionMode.standard) ...[
+  CatchesSection(
+    catches: catches,
+    availableSpecies: availableSpecies,
 
-Card(
-  elevation: 1,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(16),
+    onAddSpecies: () {
+      setState(() {
+        catches.add(CatchRow());
+      });
+    },
+
+    onAddQuantity: (index) {
+      setState(() {
+        catches[index].quantity++;
+      });
+    },
+
+    onRemoveQuantity: (index) {
+      setState(() {
+        if (catches[index].quantity > 0) {
+          catches[index].quantity--;
+        }
+      });
+    },
+
+    onDelete: (index) {
+      setState(() {
+        catches.removeAt(index);
+      });
+    },
   ),
-  child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(
-              Icons.phishing,
-              color: Colors.green,
-              size: 22,
-            ),
-            const SizedBox(width: 8),
-            Text(
-              T.catches,
-              style: const TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-
-        if (catches.isNotEmpty) ...[
-          const SizedBox(height: 16),
-
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: catches.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 10),
-            itemBuilder: (context, index) {
-              final catchRow = catches[index];
-
-return CatchRowWidget(
-  catchRow: catchRow,
-  availableSpecies: availableSpecies,
-
-  onRemove: () {
-    setState(() {
-      if (catchRow.quantity > 0) {
-        catchRow.quantity--;
-      }
-    });
-  },
-
-  onAdd: () {
-    setState(() {
-      catchRow.quantity++;
-    });
-  },
-
-  onDelete: () {
-    setState(() {
-      catches.removeAt(index);
-    });
-  },
-);   },
-          ),
-        ],
-
-        const SizedBox(height: 12),
-
-        Center(
-          child: OutlinedButton.icon(
-            icon: const Icon(Icons.add),
-            label: Text(T.addSpecies),
-            onPressed: () {
-              setState(() {
-                catches.add(CatchRow());
-              });
-            },
-          ),
-        ),
-      ],
-    ),
-  ),
-),
 ],
-
 const SizedBox(height: 10),
 
-SizedBox(
-  width: double.infinity,
-  height: 52,
-  child: ElevatedButton(
-    onPressed: loading ? null : saveSession,
-    style: ElevatedButton.styleFrom(
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-    ),
-    child: Text(
-      widget.session == null ? T.saveSession : T.saveChanges,
-      style: const TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  ),
-),          ],
+SessionButtons(
+  loading: loading,
+  isNewSession: widget.session == null,
+  onSave: saveSession,
+),
+    ],
         ),
       ),
     );

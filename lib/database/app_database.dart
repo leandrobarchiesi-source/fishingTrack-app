@@ -1015,7 +1015,11 @@ Future<List<SessionCatchData>> getSessionCatches(
   String sessionId,
 ) {
   return (select(sessionCatch)
-        ..where((t) => t.sessionId.equals(sessionId)))
+        ..where(
+          (t) =>
+              t.sessionId.equals(sessionId) &
+              t.deletedAt.isNull(),
+        ))
       .get();
 }
 
