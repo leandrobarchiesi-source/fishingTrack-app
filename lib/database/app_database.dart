@@ -1,4 +1,3 @@
-
 import 'package:drift/drift.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../core/wheater/weather_service.dart';
@@ -12,18 +11,26 @@ import '/core/app_settings.dart';
 import 'database_connection.dart';
 import 'migrations.dart';
 import 'tables/session_log.dart';
+import 'tables/live_counters.dart';
+import 'session_event_type.dart';
+import 'package:uuid/uuid.dart';
+
+
+
 
 part 'app_database.g.dart';
 
+const uuid = Uuid();
+
 @DriftDatabase(
-  tables: [
-    FishingSessions,
-    Spots,
-    Profiles,
-    SessionCatch,
-    SessionLog,
-  ],
-)
+tables: [
+  FishingSessions,
+  Spots,
+  Profiles,
+  SessionCatch,
+  SessionLog,
+  LiveCounterEntries
+],)
 
 class AppDatabase extends _$AppDatabase {
   AppDatabase()
@@ -32,7 +39,7 @@ class AppDatabase extends _$AppDatabase {
         );
 
   @override
-  int get schemaVersion => 13;
+  int get schemaVersion => 14;
 
   @override
   MigrationStrategy get migration => buildMigration(this);
@@ -203,6 +210,145 @@ Future<void> deleteSession(String id) async {
     );
 
   }
+
+Future<void> addCatchEvent({
+  required String sessionId,
+  required int counter,
+}) async {
+  await addSessionEvent(
+    sessionId: sessionId,
+    eventType: SessionEventType.catchFish,
+    counter: counter,
+  );
+}
+
+Future<void> addCastEvent(
+  String sessionId,
+) async {
+  await addSessionEvent(
+    sessionId: sessionId,
+    eventType: SessionEventType.cast,
+  );
+}
+
+Future<void> addStartEvent(
+  String sessionId,
+) async {
+  await addSessionEvent(
+    sessionId: sessionId,
+    eventType: SessionEventType.start,
+  );
+}
+
+  Future<void> startLiveSession(
+  String sessionId,
+) async {
+  final now = DateTime.now();
+
+  await (update(fishingSessions)
+        ..where((t) => t.id.equals(sessionId)))
+      .write(
+    FishingSessionsCompanion(
+      oraInizio: Value(now),
+      status: const Value("running"),
+      synced: const Value(false),
+      updatedAt: Value(now.toUtc()),
+    ),
+  );
+}
+
+Future<int> getCastCount(String sessionId) async {
+  final events = await (select(sessionLog)
+        ..where((t) =>
+            t.sessionId.equals(sessionId) &
+            t.eventType.equals(SessionEventType.cast)))
+      .get();
+
+  return events.length;
+}
+
+Future<void> printSessionLog(String sessionId) async {
+  final events = await getSessionEvents(sessionId);
+
+  for (final e in events) {
+    print(
+      '${e.eventType}  counter=${e.counter}  ${e.timestamp}',
+    );
+  }
+}
+Future<void> endLiveSession(
+  String sessionId,
+) async {
+  final now = DateTime.now();
+
+  await (update(fishingSessions)
+        ..where((t) => t.id.equals(sessionId)))
+      .write(
+    FishingSessionsCompanion(
+      oraFine: Value(now),
+      status: const Value("completed"),
+      synced: const Value(false),
+      updatedAt: Value(now.toUtc()),
+    ),
+  );
+}
+
+Future<void> addSessionEvent({
+  required String sessionId,
+  required String eventType,
+  int? counter,
+  String? species,
+  int quantity = 1,
+}) async {
+  await into(sessionLog).insert(
+    SessionLogCompanion.insert(
+     id: uuid.v4(),
+      sessionId: sessionId,
+      eventType: eventType,
+      counter: Value(counter),
+      species: Value(species),
+      quantity: Value(quantity),
+      timestamp: DateTime.now(),
+      synced: const Value(false),
+    ),
+  );
+  
+}
+
+Future<List<SessionLogData>> getSessionEvents(
+  String sessionId,
+) {
+  return (select(sessionLog)
+        ..where((t) => t.sessionId.equals(sessionId))
+        ..orderBy([
+          (t) => OrderingTerm.asc(t.timestamp),
+        ]))
+      .get();
+}
+
+Future<SessionLogData?> getLastCatch(
+  String sessionId,
+  int counter,
+) {
+  return (select(sessionLog)
+        ..where((t) =>
+            t.sessionId.equals(sessionId) &
+            t.eventType.equals(SessionEventType.catchFish) &
+            t.counter.equals(counter))
+        ..orderBy([
+          (t) => OrderingTerm.desc(t.timestamp),
+        ])
+        ..limit(1))
+      .getSingleOrNull();
+}
+
+Future<void> deleteSessionEvent(
+  String id,
+) async {
+  await (delete(sessionLog)
+        ..where((t) => t.id.equals(id)))
+      .go();
+}
 
   Future<bool> completaMeteoSessione(String id) async {
   final sessione = await (select(fishingSessions)

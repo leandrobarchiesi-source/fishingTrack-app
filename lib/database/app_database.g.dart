@@ -2513,6 +2513,12 @@ class $SessionLogTable extends SessionLog
   late final GeneratedColumn<String> eventType = GeneratedColumn<String>(
       'event_type', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _counterMeta =
+      const VerificationMeta('counter');
+  @override
+  late final GeneratedColumn<int> counter = GeneratedColumn<int>(
+      'counter', aliasedName, true,
+      type: DriftSqlType.int, requiredDuringInsert: false);
   static const VerificationMeta _speciesMeta =
       const VerificationMeta('species');
   @override
@@ -2569,6 +2575,7 @@ class $SessionLogTable extends SessionLog
         id,
         sessionId,
         eventType,
+        counter,
         species,
         quantity,
         timestamp,
@@ -2603,6 +2610,10 @@ class $SessionLogTable extends SessionLog
           eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta));
     } else if (isInserting) {
       context.missing(_eventTypeMeta);
+    }
+    if (data.containsKey('counter')) {
+      context.handle(_counterMeta,
+          counter.isAcceptableOrUnknown(data['counter']!, _counterMeta));
     }
     if (data.containsKey('species')) {
       context.handle(_speciesMeta,
@@ -2649,6 +2660,8 @@ class $SessionLogTable extends SessionLog
           .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
       eventType: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}event_type'])!,
+      counter: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}counter']),
       species: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}species']),
       quantity: attachedDatabase.typeMapping
@@ -2675,8 +2688,17 @@ class $SessionLogTable extends SessionLog
 class SessionLogData extends DataClass implements Insertable<SessionLogData> {
   final String id;
   final String sessionId;
+
+  /// start, cast, catch, end...
   final String eventType;
+
+  /// Contatore Live (1,2,3...)
+  final int? counter;
+
+  /// Specie assegnata a fine sessione
   final String? species;
+
+  /// Per sviluppi futuri (es. doppia cattura)
   final int quantity;
   final DateTime timestamp;
   final bool synced;
@@ -2687,6 +2709,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
       {required this.id,
       required this.sessionId,
       required this.eventType,
+      this.counter,
       this.species,
       required this.quantity,
       required this.timestamp,
@@ -2700,6 +2723,9 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
     map['id'] = Variable<String>(id);
     map['session_id'] = Variable<String>(sessionId);
     map['event_type'] = Variable<String>(eventType);
+    if (!nullToAbsent || counter != null) {
+      map['counter'] = Variable<int>(counter);
+    }
     if (!nullToAbsent || species != null) {
       map['species'] = Variable<String>(species);
     }
@@ -2719,6 +2745,9 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
       id: Value(id),
       sessionId: Value(sessionId),
       eventType: Value(eventType),
+      counter: counter == null && nullToAbsent
+          ? const Value.absent()
+          : Value(counter),
       species: species == null && nullToAbsent
           ? const Value.absent()
           : Value(species),
@@ -2740,6 +2769,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
       id: serializer.fromJson<String>(json['id']),
       sessionId: serializer.fromJson<String>(json['sessionId']),
       eventType: serializer.fromJson<String>(json['eventType']),
+      counter: serializer.fromJson<int?>(json['counter']),
       species: serializer.fromJson<String?>(json['species']),
       quantity: serializer.fromJson<int>(json['quantity']),
       timestamp: serializer.fromJson<DateTime>(json['timestamp']),
@@ -2756,6 +2786,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
       'id': serializer.toJson<String>(id),
       'sessionId': serializer.toJson<String>(sessionId),
       'eventType': serializer.toJson<String>(eventType),
+      'counter': serializer.toJson<int?>(counter),
       'species': serializer.toJson<String?>(species),
       'quantity': serializer.toJson<int>(quantity),
       'timestamp': serializer.toJson<DateTime>(timestamp),
@@ -2770,6 +2801,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
           {String? id,
           String? sessionId,
           String? eventType,
+          Value<int?> counter = const Value.absent(),
           Value<String?> species = const Value.absent(),
           int? quantity,
           DateTime? timestamp,
@@ -2781,6 +2813,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
         id: id ?? this.id,
         sessionId: sessionId ?? this.sessionId,
         eventType: eventType ?? this.eventType,
+        counter: counter.present ? counter.value : this.counter,
         species: species.present ? species.value : this.species,
         quantity: quantity ?? this.quantity,
         timestamp: timestamp ?? this.timestamp,
@@ -2794,6 +2827,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
       id: data.id.present ? data.id.value : this.id,
       sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
       eventType: data.eventType.present ? data.eventType.value : this.eventType,
+      counter: data.counter.present ? data.counter.value : this.counter,
       species: data.species.present ? data.species.value : this.species,
       quantity: data.quantity.present ? data.quantity.value : this.quantity,
       timestamp: data.timestamp.present ? data.timestamp.value : this.timestamp,
@@ -2810,6 +2844,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
           ..write('id: $id, ')
           ..write('sessionId: $sessionId, ')
           ..write('eventType: $eventType, ')
+          ..write('counter: $counter, ')
           ..write('species: $species, ')
           ..write('quantity: $quantity, ')
           ..write('timestamp: $timestamp, ')
@@ -2822,8 +2857,8 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
   }
 
   @override
-  int get hashCode => Object.hash(id, sessionId, eventType, species, quantity,
-      timestamp, synced, createdAt, updatedAt, deletedAt);
+  int get hashCode => Object.hash(id, sessionId, eventType, counter, species,
+      quantity, timestamp, synced, createdAt, updatedAt, deletedAt);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -2831,6 +2866,7 @@ class SessionLogData extends DataClass implements Insertable<SessionLogData> {
           other.id == this.id &&
           other.sessionId == this.sessionId &&
           other.eventType == this.eventType &&
+          other.counter == this.counter &&
           other.species == this.species &&
           other.quantity == this.quantity &&
           other.timestamp == this.timestamp &&
@@ -2844,6 +2880,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
   final Value<String> id;
   final Value<String> sessionId;
   final Value<String> eventType;
+  final Value<int?> counter;
   final Value<String?> species;
   final Value<int> quantity;
   final Value<DateTime> timestamp;
@@ -2856,6 +2893,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
     this.id = const Value.absent(),
     this.sessionId = const Value.absent(),
     this.eventType = const Value.absent(),
+    this.counter = const Value.absent(),
     this.species = const Value.absent(),
     this.quantity = const Value.absent(),
     this.timestamp = const Value.absent(),
@@ -2869,6 +2907,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
     required String id,
     required String sessionId,
     required String eventType,
+    this.counter = const Value.absent(),
     this.species = const Value.absent(),
     this.quantity = const Value.absent(),
     required DateTime timestamp,
@@ -2885,6 +2924,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
     Expression<String>? id,
     Expression<String>? sessionId,
     Expression<String>? eventType,
+    Expression<int>? counter,
     Expression<String>? species,
     Expression<int>? quantity,
     Expression<DateTime>? timestamp,
@@ -2898,6 +2938,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
       if (id != null) 'id': id,
       if (sessionId != null) 'session_id': sessionId,
       if (eventType != null) 'event_type': eventType,
+      if (counter != null) 'counter': counter,
       if (species != null) 'species': species,
       if (quantity != null) 'quantity': quantity,
       if (timestamp != null) 'timestamp': timestamp,
@@ -2913,6 +2954,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
       {Value<String>? id,
       Value<String>? sessionId,
       Value<String>? eventType,
+      Value<int?>? counter,
       Value<String?>? species,
       Value<int>? quantity,
       Value<DateTime>? timestamp,
@@ -2925,6 +2967,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
       id: id ?? this.id,
       sessionId: sessionId ?? this.sessionId,
       eventType: eventType ?? this.eventType,
+      counter: counter ?? this.counter,
       species: species ?? this.species,
       quantity: quantity ?? this.quantity,
       timestamp: timestamp ?? this.timestamp,
@@ -2947,6 +2990,9 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
     }
     if (eventType.present) {
       map['event_type'] = Variable<String>(eventType.value);
+    }
+    if (counter.present) {
+      map['counter'] = Variable<int>(counter.value);
     }
     if (species.present) {
       map['species'] = Variable<String>(species.value);
@@ -2981,6 +3027,7 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
           ..write('id: $id, ')
           ..write('sessionId: $sessionId, ')
           ..write('eventType: $eventType, ')
+          ..write('counter: $counter, ')
           ..write('species: $species, ')
           ..write('quantity: $quantity, ')
           ..write('timestamp: $timestamp, ')
@@ -2988,6 +3035,274 @@ class SessionLogCompanion extends UpdateCompanion<SessionLogData> {
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
           ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LiveCounterEntriesTable extends LiveCounterEntries
+    with TableInfo<$LiveCounterEntriesTable, LiveCounterEntry> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LiveCounterEntriesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _counterMeta =
+      const VerificationMeta('counter');
+  @override
+  late final GeneratedColumn<int> counter = GeneratedColumn<int>(
+      'counter', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _quantityMeta =
+      const VerificationMeta('quantity');
+  @override
+  late final GeneratedColumn<int> quantity = GeneratedColumn<int>(
+      'quantity', aliasedName, false,
+      type: DriftSqlType.int,
+      requiredDuringInsert: false,
+      defaultValue: const Constant(0));
+  @override
+  List<GeneratedColumn> get $columns => [id, sessionId, counter, quantity];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'live_counter_entries';
+  @override
+  VerificationContext validateIntegrity(Insertable<LiveCounterEntry> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('counter')) {
+      context.handle(_counterMeta,
+          counter.isAcceptableOrUnknown(data['counter']!, _counterMeta));
+    } else if (isInserting) {
+      context.missing(_counterMeta);
+    }
+    if (data.containsKey('quantity')) {
+      context.handle(_quantityMeta,
+          quantity.isAcceptableOrUnknown(data['quantity']!, _quantityMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LiveCounterEntry map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LiveCounterEntry(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      counter: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}counter'])!,
+      quantity: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}quantity'])!,
+    );
+  }
+
+  @override
+  $LiveCounterEntriesTable createAlias(String alias) {
+    return $LiveCounterEntriesTable(attachedDatabase, alias);
+  }
+}
+
+class LiveCounterEntry extends DataClass
+    implements Insertable<LiveCounterEntry> {
+  final String id;
+  final String sessionId;
+  final int counter;
+  final int quantity;
+  const LiveCounterEntry(
+      {required this.id,
+      required this.sessionId,
+      required this.counter,
+      required this.quantity});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['session_id'] = Variable<String>(sessionId);
+    map['counter'] = Variable<int>(counter);
+    map['quantity'] = Variable<int>(quantity);
+    return map;
+  }
+
+  LiveCounterEntriesCompanion toCompanion(bool nullToAbsent) {
+    return LiveCounterEntriesCompanion(
+      id: Value(id),
+      sessionId: Value(sessionId),
+      counter: Value(counter),
+      quantity: Value(quantity),
+    );
+  }
+
+  factory LiveCounterEntry.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LiveCounterEntry(
+      id: serializer.fromJson<String>(json['id']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      counter: serializer.fromJson<int>(json['counter']),
+      quantity: serializer.fromJson<int>(json['quantity']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'counter': serializer.toJson<int>(counter),
+      'quantity': serializer.toJson<int>(quantity),
+    };
+  }
+
+  LiveCounterEntry copyWith(
+          {String? id, String? sessionId, int? counter, int? quantity}) =>
+      LiveCounterEntry(
+        id: id ?? this.id,
+        sessionId: sessionId ?? this.sessionId,
+        counter: counter ?? this.counter,
+        quantity: quantity ?? this.quantity,
+      );
+  LiveCounterEntry copyWithCompanion(LiveCounterEntriesCompanion data) {
+    return LiveCounterEntry(
+      id: data.id.present ? data.id.value : this.id,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      counter: data.counter.present ? data.counter.value : this.counter,
+      quantity: data.quantity.present ? data.quantity.value : this.quantity,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LiveCounterEntry(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('counter: $counter, ')
+          ..write('quantity: $quantity')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, sessionId, counter, quantity);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LiveCounterEntry &&
+          other.id == this.id &&
+          other.sessionId == this.sessionId &&
+          other.counter == this.counter &&
+          other.quantity == this.quantity);
+}
+
+class LiveCounterEntriesCompanion extends UpdateCompanion<LiveCounterEntry> {
+  final Value<String> id;
+  final Value<String> sessionId;
+  final Value<int> counter;
+  final Value<int> quantity;
+  final Value<int> rowid;
+  const LiveCounterEntriesCompanion({
+    this.id = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.counter = const Value.absent(),
+    this.quantity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LiveCounterEntriesCompanion.insert({
+    required String id,
+    required String sessionId,
+    required int counter,
+    this.quantity = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        sessionId = Value(sessionId),
+        counter = Value(counter);
+  static Insertable<LiveCounterEntry> custom({
+    Expression<String>? id,
+    Expression<String>? sessionId,
+    Expression<int>? counter,
+    Expression<int>? quantity,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (sessionId != null) 'session_id': sessionId,
+      if (counter != null) 'counter': counter,
+      if (quantity != null) 'quantity': quantity,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LiveCounterEntriesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? sessionId,
+      Value<int>? counter,
+      Value<int>? quantity,
+      Value<int>? rowid}) {
+    return LiveCounterEntriesCompanion(
+      id: id ?? this.id,
+      sessionId: sessionId ?? this.sessionId,
+      counter: counter ?? this.counter,
+      quantity: quantity ?? this.quantity,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (counter.present) {
+      map['counter'] = Variable<int>(counter.value);
+    }
+    if (quantity.present) {
+      map['quantity'] = Variable<int>(quantity.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LiveCounterEntriesCompanion(')
+          ..write('id: $id, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('counter: $counter, ')
+          ..write('quantity: $quantity, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -3003,12 +3318,20 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ProfilesTable profiles = $ProfilesTable(this);
   late final $SessionCatchTable sessionCatch = $SessionCatchTable(this);
   late final $SessionLogTable sessionLog = $SessionLogTable(this);
+  late final $LiveCounterEntriesTable liveCounterEntries =
+      $LiveCounterEntriesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
   @override
-  List<DatabaseSchemaEntity> get allSchemaEntities =>
-      [fishingSessions, spots, profiles, sessionCatch, sessionLog];
+  List<DatabaseSchemaEntity> get allSchemaEntities => [
+        fishingSessions,
+        spots,
+        profiles,
+        sessionCatch,
+        sessionLog,
+        liveCounterEntries
+      ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
         [
@@ -4434,6 +4757,7 @@ typedef $$SessionLogTableCreateCompanionBuilder = SessionLogCompanion Function({
   required String id,
   required String sessionId,
   required String eventType,
+  Value<int?> counter,
   Value<String?> species,
   Value<int> quantity,
   required DateTime timestamp,
@@ -4447,6 +4771,7 @@ typedef $$SessionLogTableUpdateCompanionBuilder = SessionLogCompanion Function({
   Value<String> id,
   Value<String> sessionId,
   Value<String> eventType,
+  Value<int?> counter,
   Value<String?> species,
   Value<int> quantity,
   Value<DateTime> timestamp,
@@ -4491,6 +4816,9 @@ class $$SessionLogTableFilterComposer
 
   ColumnFilters<String> get eventType => $composableBuilder(
       column: $table.eventType, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get counter => $composableBuilder(
+      column: $table.counter, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get species => $composableBuilder(
       column: $table.species, builder: (column) => ColumnFilters(column));
@@ -4549,6 +4877,9 @@ class $$SessionLogTableOrderingComposer
   ColumnOrderings<String> get eventType => $composableBuilder(
       column: $table.eventType, builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<int> get counter => $composableBuilder(
+      column: $table.counter, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get species => $composableBuilder(
       column: $table.species, builder: (column) => ColumnOrderings(column));
 
@@ -4605,6 +4936,9 @@ class $$SessionLogTableAnnotationComposer
 
   GeneratedColumn<String> get eventType =>
       $composableBuilder(column: $table.eventType, builder: (column) => column);
+
+  GeneratedColumn<int> get counter =>
+      $composableBuilder(column: $table.counter, builder: (column) => column);
 
   GeneratedColumn<String> get species =>
       $composableBuilder(column: $table.species, builder: (column) => column);
@@ -4674,6 +5008,7 @@ class $$SessionLogTableTableManager extends RootTableManager<
             Value<String> id = const Value.absent(),
             Value<String> sessionId = const Value.absent(),
             Value<String> eventType = const Value.absent(),
+            Value<int?> counter = const Value.absent(),
             Value<String?> species = const Value.absent(),
             Value<int> quantity = const Value.absent(),
             Value<DateTime> timestamp = const Value.absent(),
@@ -4687,6 +5022,7 @@ class $$SessionLogTableTableManager extends RootTableManager<
             id: id,
             sessionId: sessionId,
             eventType: eventType,
+            counter: counter,
             species: species,
             quantity: quantity,
             timestamp: timestamp,
@@ -4700,6 +5036,7 @@ class $$SessionLogTableTableManager extends RootTableManager<
             required String id,
             required String sessionId,
             required String eventType,
+            Value<int?> counter = const Value.absent(),
             Value<String?> species = const Value.absent(),
             Value<int> quantity = const Value.absent(),
             required DateTime timestamp,
@@ -4713,6 +5050,7 @@ class $$SessionLogTableTableManager extends RootTableManager<
             id: id,
             sessionId: sessionId,
             eventType: eventType,
+            counter: counter,
             species: species,
             quantity: quantity,
             timestamp: timestamp,
@@ -4778,6 +5116,166 @@ typedef $$SessionLogTableProcessedTableManager = ProcessedTableManager<
     (SessionLogData, $$SessionLogTableReferences),
     SessionLogData,
     PrefetchHooks Function({bool sessionId})>;
+typedef $$LiveCounterEntriesTableCreateCompanionBuilder
+    = LiveCounterEntriesCompanion Function({
+  required String id,
+  required String sessionId,
+  required int counter,
+  Value<int> quantity,
+  Value<int> rowid,
+});
+typedef $$LiveCounterEntriesTableUpdateCompanionBuilder
+    = LiveCounterEntriesCompanion Function({
+  Value<String> id,
+  Value<String> sessionId,
+  Value<int> counter,
+  Value<int> quantity,
+  Value<int> rowid,
+});
+
+class $$LiveCounterEntriesTableFilterComposer
+    extends Composer<_$AppDatabase, $LiveCounterEntriesTable> {
+  $$LiveCounterEntriesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get counter => $composableBuilder(
+      column: $table.counter, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnFilters(column));
+}
+
+class $$LiveCounterEntriesTableOrderingComposer
+    extends Composer<_$AppDatabase, $LiveCounterEntriesTable> {
+  $$LiveCounterEntriesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get sessionId => $composableBuilder(
+      column: $table.sessionId, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get counter => $composableBuilder(
+      column: $table.counter, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<int> get quantity => $composableBuilder(
+      column: $table.quantity, builder: (column) => ColumnOrderings(column));
+}
+
+class $$LiveCounterEntriesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LiveCounterEntriesTable> {
+  $$LiveCounterEntriesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionId =>
+      $composableBuilder(column: $table.sessionId, builder: (column) => column);
+
+  GeneratedColumn<int> get counter =>
+      $composableBuilder(column: $table.counter, builder: (column) => column);
+
+  GeneratedColumn<int> get quantity =>
+      $composableBuilder(column: $table.quantity, builder: (column) => column);
+}
+
+class $$LiveCounterEntriesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $LiveCounterEntriesTable,
+    LiveCounterEntry,
+    $$LiveCounterEntriesTableFilterComposer,
+    $$LiveCounterEntriesTableOrderingComposer,
+    $$LiveCounterEntriesTableAnnotationComposer,
+    $$LiveCounterEntriesTableCreateCompanionBuilder,
+    $$LiveCounterEntriesTableUpdateCompanionBuilder,
+    (
+      LiveCounterEntry,
+      BaseReferences<_$AppDatabase, $LiveCounterEntriesTable, LiveCounterEntry>
+    ),
+    LiveCounterEntry,
+    PrefetchHooks Function()> {
+  $$LiveCounterEntriesTableTableManager(
+      _$AppDatabase db, $LiveCounterEntriesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LiveCounterEntriesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LiveCounterEntriesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LiveCounterEntriesTableAnnotationComposer(
+                  $db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> sessionId = const Value.absent(),
+            Value<int> counter = const Value.absent(),
+            Value<int> quantity = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              LiveCounterEntriesCompanion(
+            id: id,
+            sessionId: sessionId,
+            counter: counter,
+            quantity: quantity,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String sessionId,
+            required int counter,
+            Value<int> quantity = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              LiveCounterEntriesCompanion.insert(
+            id: id,
+            sessionId: sessionId,
+            counter: counter,
+            quantity: quantity,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ));
+}
+
+typedef $$LiveCounterEntriesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $LiveCounterEntriesTable,
+    LiveCounterEntry,
+    $$LiveCounterEntriesTableFilterComposer,
+    $$LiveCounterEntriesTableOrderingComposer,
+    $$LiveCounterEntriesTableAnnotationComposer,
+    $$LiveCounterEntriesTableCreateCompanionBuilder,
+    $$LiveCounterEntriesTableUpdateCompanionBuilder,
+    (
+      LiveCounterEntry,
+      BaseReferences<_$AppDatabase, $LiveCounterEntriesTable, LiveCounterEntry>
+    ),
+    LiveCounterEntry,
+    PrefetchHooks Function()>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -4792,4 +5290,6 @@ class $AppDatabaseManager {
       $$SessionCatchTableTableManager(_db, _db.sessionCatch);
   $$SessionLogTableTableManager get sessionLog =>
       $$SessionLogTableTableManager(_db, _db.sessionLog);
+  $$LiveCounterEntriesTableTableManager get liveCounterEntries =>
+      $$LiveCounterEntriesTableTableManager(_db, _db.liveCounterEntries);
 }

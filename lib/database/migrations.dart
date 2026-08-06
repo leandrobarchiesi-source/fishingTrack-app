@@ -67,12 +67,13 @@ MigrationStrategy buildMigration(AppDatabase db) {
         );
       }
 
-      if (from < 12) {
+if (from < 12) {
   await m.createTable(
     db.sessionLog,
   );
+}
 
-  if (from < 13) {
+if (from < 13) {
   await m.addColumn(
     db.fishingSessions,
     db.fishingSessions.mode,
@@ -83,19 +84,11 @@ MigrationStrategy buildMigration(AppDatabase db) {
     db.fishingSessions.status,
   );
 }
+
+if (from < 14) {
+  await m.createTable(
+db.liveCounterEntries  );
 }
-
-  //    if (from < 10) {
-  //      await m.addColumn(
-  //        db.sessionCatch,
-  //        db.sessionCatch.synced,
-  //       );
-
-  //      await m.addColumn(
-  //        db.sessionCatch,
-  //        db.sessionCatch.deletedAt,
-  //       );
-  //    }
     },
   );
 }

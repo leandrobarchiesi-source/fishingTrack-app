@@ -33,13 +33,18 @@ class _SessionDetailPageState
 void initState() {
   super.initState();
 
+
+
   session = widget.session;
+  reloadSession();
 
 loadCatches();
 
+if (session.mode == SessionMode.standard) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     aggiornaMeteoSeNecessario();
   });
+}
 }
 
 Future<void> loadCatches() async {
@@ -50,6 +55,17 @@ Future<void> loadCatches() async {
   if (mounted) {
     setState(() {});
   }
+}
+
+Future<void> reloadSession() async {
+  final s = await widget.database.getSessionById(widget.session.id);
+   debugPrint("RELOAD STATUS = ${s?.status}");
+
+  if (!mounted || s == null) return;
+
+  setState(() {
+    session = s;
+  });
 }
 
 Future<void> aggiornaMeteoSeNecessario() async {
@@ -106,6 +122,34 @@ Future<void> aggiornaMeteoSeNecessario() async {
     );
   }
 
+Future<void> eliminaSessione() async {
+  final conferma = await showDialog<bool>(
+    context: context,
+    builder: (_) => AlertDialog(
+      title: Text(T.deleteSession),
+      content: Text(T.deleteSessionQuestion),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text(T.cancel),
+        ),
+        ElevatedButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text(T.delete),
+        ),
+      ],
+    ),
+  );
+
+  if (conferma != true) return;
+
+  await widget.database.deleteSession(session.id);
+
+  if (mounted) {
+    Navigator.pop(context, true);
+  }
+}
+
   @override
   Widget build(BuildContext context) {
     final durata = session.oraFine.difference(
@@ -116,97 +160,27 @@ Future<void> aggiornaMeteoSeNecessario() async {
 
     final minuti = durata.inMinutes % 60;
 
+    final isSummary = session.mode == SessionMode.standard;
+final isLive = session.mode == SessionMode.live;
+
+final isPlanned = session.status == SessionStatus.planned;
+final isRunning = session.status == SessionStatus.running;
+final isCompleted = session.status == SessionStatus.completed;
+
+final showSummaryData = isSummary || isCompleted;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           T.sessionSummary,
         ),
-        actions: [
-                    IconButton(
-            icon: const Icon(
-              Icons.delete,
-            ),
-            onPressed: () async {
-              final conferma = await showDialog<bool>(
-                context: context,
-                builder: (_) => AlertDialog(
-                  title: Text(
-                    T.deleteSession,
-                  ),
-                  content: Text(
-                    T.deleteSessionQuestion,
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () {
-                        Navigator.pop(
-                          context,
-                          false,
-                        );
-                      },
-                      child: Text(
-                        T.cancel,
-                      ),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(
-                          context,
-                          true,
-                        );
-                      },
-                      child: Text(
-                        T.delete,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-              if (conferma != true) {
-                return;
-              }
-
-              await widget.database.deleteSession(
-                session.id,
-              );
-
-              if (context.mounted) {
-                Navigator.pop(
-                  context,
-                  true,
-                );
-              }
-            },
-          ),
-        
-
-if (session.mode == SessionMode.standard)
-  IconButton(
-    icon: const Icon(Icons.edit),
-    onPressed: () async {
-      final result = await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => NewSessionPage(
-            database: widget.database,
-            session: session,
-          ),
-        ),
-      );
-
-      if (context.mounted && result == true) {
-        Navigator.pop(context, true);
-      }
-    },
-  ),        ],
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Card(
             child: Padding(
-              padding: const EdgeInsets.all(16),
+padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -218,14 +192,13 @@ if (session.mode == SessionMode.standard)
                     ),
                   ),
                   const SizedBox(
-                    height: 20,
+                    height: 12,
                   ),
 Text(
   "🎣 ${T.sessionType(session.tipoPescata)}",
 ),
 
-if (session.mode == SessionMode.standard ||
-    session.status == SessionStatus.completed) ...[
+if (showSummaryData) ...[
   const SizedBox(
     height: 10,
   ),
@@ -247,7 +220,7 @@ if (session.mode == SessionMode.standard ||
 ],
 
 const SizedBox(
-  height: 20,
+  height: 12,
 ),
                   if (session.latitudine != null)
                     Column(
@@ -282,8 +255,7 @@ const SizedBox(
                           height: 20,
                         ),
 
-                        if (session.mode == SessionMode.standard ||
-    session.status == SessionStatus.completed) ...[
+                        if (showSummaryData)...[
                         Text(
                           "🌤 ${T.weather}",
                           style: const TextStyle(
@@ -405,34 +377,146 @@ if (catches.isNotEmpty)
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 12),
 
-if (session.mode == SessionMode.live &&
-    session.status == SessionStatus.planned)
-  SizedBox(
-    width: double.infinity,
-    height: 55,
-    child: ElevatedButton(
-      onPressed: () async {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => LiveSessionPage(
-              database: widget.database,
-              session: session,
+Card(
+  child: Padding(
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+
+        // ===== LIVE PLANNED =====
+
+        if (isLive && isPlanned) ...[
+          SizedBox(
+            height: 55,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.play_arrow),
+              label: const Text(
+                "INIZIA SESSIONE",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              onPressed: () async {
+await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => LiveSessionPage(
+      database: widget.database,
+      session: session,
+    ),
+  ),
+);
+
+await reloadSession();
+
+             },
             ),
           ),
-        );
-      },
-      child: const Text(
-        "APRI LIVE",
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
+
+          const SizedBox(height: 12),
+        ],
+
+        // ===== MODIFICA =====
+
+        if (isSummary || (isLive && isPlanned)) ...[
+          SizedBox(
+            height: 55,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.edit),
+              label: Text(T.editSession),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NewSessionPage(
+                      database: widget.database,
+                      session: session,
+                    ),
+                  ),
+                );
+
+                if (context.mounted && result == true) {
+                  Navigator.pop(context, true);
+                }
+              },
+            ),
+          ),
+
+          const SizedBox(height: 12),
+        ],
+
+        // ===== ELIMINA =====
+
+        if (isSummary || (isLive && isPlanned))
+          SizedBox(
+            height: 55,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.delete),
+              label: Text(T.deleteSession),
+              onPressed: eliminaSessione,
+            ),
+          ),
+
+        // ===== LIVE RUNNING =====
+
+if (isLive && isRunning)
+  SizedBox(
+    height: 55,
+    child: ElevatedButton.icon(
+      icon: const Icon(Icons.play_circle_fill),
+      label: Text(T.resumeSession),
+onPressed: () async {
+await Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => LiveSessionPage(
+      database: widget.database,
+      session: session,
     ),
-  ),        ],
+  ),
+);
+
+await reloadSession();  
+},
+    ),
+  ),
+
+// ===== LIVE COMPLETED =====
+
+if (isLive && isCompleted) ...[
+  SizedBox(
+    height: 55,
+    child: ElevatedButton.icon(
+      icon: const Icon(Icons.history),
+      label: Text(T.viewLog),
+      onPressed: () {
+        // TODO
+      },
+    ),
+  ),
+
+  const SizedBox(height: 12),
+
+  SizedBox(
+    height: 55,
+    child: ElevatedButton.icon(
+      icon: const Icon(Icons.edit),
+      label: Text(T.editSpotAndNotes),
+      onPressed: () {
+        // TODO
+      },
+    ),
+  ),
+]
+      ],
+    ),
+  ),
+),
+  ],
       ),
     );
       }

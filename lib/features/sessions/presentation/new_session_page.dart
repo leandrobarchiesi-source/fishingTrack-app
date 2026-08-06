@@ -23,6 +23,7 @@ import 'widgets/catch_row_widget.dart';
 import 'widgets/catches_section.dart';
 import 'widgets/fishing_type_section.dart';
 import 'widgets/session_buttons.dart';
+import 'session_detail_page.dart';
 
 const uuid = Uuid();
 
@@ -677,7 +678,24 @@ debugPrint("DOPO INSERT: ${test2.length}");
 
     if (!mounted) return;
 
-    Navigator.pop(context, true);
+if (sessionMode == SessionMode.standard) {
+  Navigator.pop(context, true);
+} else {
+  final nuovaSessione =
+      await widget.database.getSessionById(sessionId);
+
+  if (!mounted || nuovaSessione == null) return;
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => SessionDetailPage(
+        database: widget.database,
+        session: nuovaSessione,
+      ),
+    ),
+  );
+}
 } catch (e, st) {
   debugPrint('ERRORE: $e');
   debugPrint('STACK:');
@@ -751,7 +769,7 @@ const SizedBox(height: 16),
             const SizedBox(height: 16),
 
 DropdownButtonFormField<String>(
-  value: sessionMode,
+  initialValue: sessionMode,
   decoration: const InputDecoration(
     labelText: "Modalità sessione",
   ),

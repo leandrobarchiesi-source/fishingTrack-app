@@ -1,9 +1,11 @@
 import 'dart:async';
-import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
 
 import '../../../database/app_database.dart';
+import '../../../core/t.dart';
+import '../models/live_counter.dart';
+import '../../../database/session_event_type.dart';
 
 class LiveSessionPage extends StatefulWidget {
   final AppDatabase database;
@@ -21,41 +23,51 @@ class LiveSessionPage extends StatefulWidget {
 
 class _LiveSessionPageState extends State<LiveSessionPage> {
   bool sessionStarted = false;
+  final List<LiveCounter> counters = [
+  LiveCounter(counter: 1),];
 
   int casts = 0;
-  int totalFish = 0;
+  int get totalFish =>
+    counters.fold(0, (sum, c) => sum + c.quantity);
 
-Duration sessionTime = Duration.zero;
-
-/// Tempo dall'ultima cattura
-Duration lastCatchTime = Duration.zero;
-
-/// Tempo dall'ultimo CAST
-Duration recoveryTime = Duration.zero;
-
-/// Timer recupero impostato dall'utente
-Duration recoveryLimit = Duration.zero;
+Duration lastCastTime = Duration.zero;     // timer grande
+Duration lastCatchTime = Duration.zero;    // Last catch
+Duration recoveryTime = Duration.zero;     // Recovery
+Duration sessionTime = Duration.zero;      // Durata sessione
 
   Timer? timer;
 
-  @override
-  void initState() {
-    super.initState();
+@override
+void initState() {
+  debugPrint("STATUS: ${widget.session.status}");
+  debugPrint("ORA INIZIO: ${widget.session.oraInizio}");
 
-    timer = Timer.periodic(
-      const Duration(seconds: 1),
-      (_) {
-        if (!mounted || !sessionStarted) return;
+  super.initState();
 
-setState(() {
-  sessionTime += const Duration(seconds: 1);
-  lastCatchTime += const Duration(seconds: 1);
-  recoveryTime += const Duration(seconds: 1);
-});
-      },
+  if (widget.session.status == "running") {
+    sessionStarted = true;
+
+    sessionTime = DateTime.now().difference(
+      widget.session.oraInizio,
     );
+    loadLiveData();
   }
+  
 
+  timer = Timer.periodic(
+    const Duration(seconds: 1),
+    (_) {
+      if (!mounted || !sessionStarted) return;
+
+      setState(() {
+        sessionTime += const Duration(seconds: 1);
+        lastCastTime += const Duration(seconds: 1);
+        lastCatchTime += const Duration(seconds: 1);
+        recoveryTime += const Duration(seconds: 1);
+      });
+    },
+  );
+}
 @override
 void dispose() {
   timer?.cancel();
@@ -72,24 +84,69 @@ void dispose() {
     return "$h:$m:$s";
   }
 
-  void startSession() {
-    setState(() {
-      sessionStarted = true;
-sessionTime = Duration.zero;
-lastCatchTime = Duration.zero;
-recoveryTime = Duration.zero;
+Future<void> startSession() async {
+  await widget.database.startLiveSession(
+    widget.session.id,
+  );
 
-casts = 0;
-totalFish = 0;    });
-  }
+await widget.database.addStartEvent(
+  widget.session.id,
+);
 
-void cast() {
-  if (!sessionStarted) return;
+  await widget.database.printSessionLog(
+    widget.session.id,
+  );
 
   setState(() {
-    casts++;
+    sessionStarted = true;
+
+    lastCastTime = Duration.zero;
+    lastCatchTime = Duration.zero;
     recoveryTime = Duration.zero;
+    sessionTime = Duration.zero;
+
+    casts = 1;
   });
+}
+
+Future<void> loadLiveData() async {
+  final castCount =
+      await widget.database.getCastCount(widget.session.id);
+
+  if (!mounted) return;
+
+  setState(() {
+    casts = castCount == 0 ? 1 : castCount;
+  });
+}
+
+
+Future<void> cast() async {
+  if (!sessionStarted) return;
+
+await widget.database.addCastEvent(
+  widget.session.id,
+);
+
+  await widget.database.printSessionLog(
+    widget.session.id,
+  );
+
+  setState(() {
+    lastCastTime = Duration.zero;
+    recoveryTime = Duration.zero;
+    casts++;
+  });
+}
+
+Future<void> endSession() async {
+  await widget.database.endLiveSession(
+    widget.session.id,
+  );
+
+  if (!mounted) return;
+
+  Navigator.pop(context, true);
 }
 
 
@@ -152,9 +209,9 @@ Widget build(BuildContext context) {
 
             const SizedBox(height: 6),
 
-            const Text(
-              "Tempo ultima cattura",
-              style: TextStyle(
+              Text(
+  "${T.lastCatch} ${format(lastCatchTime)}",
+                  style: TextStyle(
                 color: Colors.white70,
                 fontSize: 18,
               ),
@@ -163,9 +220,9 @@ Widget build(BuildContext context) {
             const SizedBox(height: 4),
 
             Text(
-              recoveryLimit == Duration.zero
-                  ? "Recupero: OFF"
-                  : "Recupero: ${recoveryTime.inMinutes}:${(recoveryTime.inSeconds % 60).toString().padLeft(2, '0')} / ${recoveryLimit.inMinutes}:00",
+              recoveryTime == Duration.zero
+                  ? T.off
+                  : "${T.recovery}: ${recoveryTime.inMinutes}:${(recoveryTime.inSeconds % 60).toString().padLeft(2, '0')} / ${recoveryTime.inMinutes}:00",
               style: const TextStyle(
                 color: Colors.white54,
                 fontSize: 15,
@@ -183,7 +240,13 @@ Widget build(BuildContext context) {
 
             // START / CAST
 GestureDetector(
-  onTap: sessionStarted ? cast : startSession,
+onTap: () async {
+  if (sessionStarted) {
+    cast();
+  } else {
+    await startSession();
+  }
+},
   child: Container(
     width: double.infinity,
     height: 72,
@@ -196,10 +259,10 @@ GestureDetector(
     ),
     alignment: Alignment.center,
     child: Text(
-      sessionStarted
-          ? "CAST ($casts)"
-          : "START SESSIONE",
-      style: const TextStyle(
+sessionStarted
+    ? T.casts(casts)
+    : T.startSession.toUpperCase(),
+          style: const TextStyle(
         color: Colors.white,
         fontSize: 28,
         fontWeight: FontWeight.w300,
@@ -214,7 +277,7 @@ Row(
 
     Expanded(
       child: Text(
-        "CATTURE ($totalFish)",
+T.catchesCount(totalFish),
         style: const TextStyle(
           color: Colors.white70,
           fontSize: 18,
@@ -224,8 +287,15 @@ Row(
     ),
 
     GestureDetector(
-      onTap: () {},
-      child: const Padding(
+onTap: () {
+  setState(() {
+    counters.add(
+      LiveCounter(
+        counter: counters.length + 1,
+      ),
+    );
+  });
+},      child: const Padding(
         padding: EdgeInsets.all(6),
         child: Text(
           "+",
@@ -241,45 +311,69 @@ Row(
 
 const Divider(color: Colors.white24),
 
-buildSpeciesRow(
-  name: "Carpa",
-  quantity: 0,
-  onMinus: () {},
-  onPlus: () {},
-),
+...counters.map(
+  (c) => buildCounterRow(
+    counterNumber: c.counter,
+    quantity: c.quantity,
+onMinus: () async {
+  if (c.quantity > 0) {
+    setState(() {
+      c.quantity--;
+    });
+    return;
+  }
 
-buildSpeciesRow(
-  name: "Barbo",
-  quantity: 0,
-  onMinus: () {},
-  onPlus: () {},
-),
+  if (c.counter == 1) {
+    return;
+  }
 
-buildSpeciesRow(
-  name: "Carassio",
-  quantity: 0,
-  onMinus: () {},
-  onPlus: () {},
-),
+  final elimina = await showDialog<bool>(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(T.deleteCounter),
+          content: Text(
+            T.deleteCounterQuestion(c.counter),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text(T.cancel),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text(T.delete),
+            ),
+          ],
+        ),
+      ) ??
+      false;
 
-buildSpeciesRow(
-  name: "Breme",
-  quantity: 0,
-  onMinus: () {},
-  onPlus: () {},
+  if (!elimina) return;
+
+  setState(() {
+    counters.remove(c);
+
+    for (int i = 0; i < counters.length; i++) {
+      counters[i].counter = i + 1;
+    }
+  });
+},
+    onPlus: () {
+      setState(() {
+        c.quantity++;
+        lastCatchTime = Duration.zero;
+      });
+    },
+  ),
 ),
 
 const Spacer(),
 
-
-
-
-
             const SizedBox(height: 4),
 
-            Text(
-              "Durata sessione",
-              style: const TextStyle(
+Text(
+  T.duration,
+                style: TextStyle(
                 color: Colors.white54,
               ),
             ),
@@ -305,11 +399,11 @@ const Spacer(),
             const SizedBox(height: 8),
 
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
+              onPressed: () async {
+                await endSession();
               },
-              child: const Text(
-                "TERMINA SESSIONE",
+              child: Text(
+                T.endSession,
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 18,
@@ -324,13 +418,13 @@ const Spacer(),
   );
 }
 
-Widget buildSpeciesRow({
-  required String name,
+Widget buildCounterRow({
+  required int counterNumber,
   required int quantity,
   required VoidCallback onMinus,
   required VoidCallback onPlus,
 }) {
-  return Column(
+    return Column(
     children: [
       SizedBox(
         height: 52,
@@ -338,7 +432,7 @@ Widget buildSpeciesRow({
           children: [
             Expanded(
               child: Text(
-                name.toUpperCase(),
+               T.counterNumber(counterNumber).toUpperCase(),
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 18,

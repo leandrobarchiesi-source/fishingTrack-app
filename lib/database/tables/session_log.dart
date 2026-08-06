@@ -11,11 +11,18 @@ class SessionLog extends Table {
         onDelete: KeyAction.cascade,
       )();
 
+  /// start, cast, catch, end...
   TextColumn get eventType => text()();
 
+  /// Contatore Live (1,2,3...)
+  IntColumn get counter =>
+      integer().nullable()();
+
+  /// Specie assegnata a fine sessione
   TextColumn get species =>
       text().nullable()();
 
+  /// Per sviluppi futuri (es. doppia cattura)
   IntColumn get quantity =>
       integer().withDefault(const Constant(1))();
 
@@ -40,5 +47,7 @@ class SessionLog extends Table {
   @override
   List<Set<Column>> get indexes => [
         {sessionId},
+        {eventType},
+        {sessionId, eventType},
       ];
 }

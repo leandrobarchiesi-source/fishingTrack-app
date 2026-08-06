@@ -940,4 +940,137 @@ static String get startSession => _tr(
       es: 'Iniciar sesión',
     );
 
+static String get counter => _tr(
+      it: 'Contatore',
+      en: 'Counter',
+      fr: 'Compteur',
+      es: 'Contador',
+    );
+
+static String counterNumber(int number) => _tr(
+      it: 'Contatore $number',
+      en: 'Counter $number',
+      fr: 'Compteur $number',
+      es: 'Contador $number',
+    );
+
+    static String get liveSession => _tr(
+      it: 'Sessione Live',
+      en: 'Live Session',
+      fr: 'Session Live',
+      es: 'Sesión Live',
+    );
+
+static String get start => _tr(
+      it: 'Start',
+      en: 'Start',
+      fr: 'Démarrer',
+      es: 'Iniciar',
+    );
+
+static String get stop => _tr(
+      it: 'Stop',
+      en: 'Stop',
+      fr: 'Arrêter',
+      es: 'Detener',
+    );
+
+static String get cast => _tr(
+      it: 'Lancio',
+      en: 'Cast',
+      fr: 'Lancer',
+      es: 'Lanzamiento',
+    );
+
+static String get addCounter => _tr(
+      it: 'Nuovo contatore',
+      en: 'New counter',
+      fr: 'Nouveau compteur',
+      es: 'Nuevo contador',
+    );
+
+static String get totalFish => _tr(
+      it: 'Pesci',
+      en: 'Fish',
+      fr: 'Poissons',
+      es: 'Peces',
+    );
+
+static String get lastCatch => _tr(
+  it: 'Ultima cattura',
+  en: 'Last catch',
+  fr: 'Dernière capture',
+  es: 'Última captura',
+);
+
+static String get recovery => _tr(
+      it: 'Recupero',
+      en: 'Recovery',
+      fr: 'Récupération',
+      es: 'Recuperación',
+    );
+
+static String get off => _tr(
+      it: 'OFF',
+      en: 'OFF',
+      fr: 'OFF',
+      es: 'OFF',
+    );
+
+static String casts(int value) => _tr(
+      it: 'Lanci ($value)',
+      en: 'Casts ($value)',
+      fr: 'Lancers ($value)',
+      es: 'Lances ($value)',
+    );
+
+static String catchesCount(int value) => _tr(
+      it: 'Catture ($value)',
+      en: 'Catches ($value)',
+      fr: 'Captures ($value)',
+      es: 'Capturas ($value)',
+    );
+
+static String get endSession => _tr(
+      it: 'Termina sessione',
+      en: 'End session',
+      fr: 'Terminer la session',
+      es: 'Finalizar sesión',
+    );
+
+    static String get deleteCounter => _tr(
+  it: 'Elimina contatore',
+  en: 'Delete counter',
+  fr: 'Supprimer le compteur',
+  es: 'Eliminar contador',
+);
+
+static String deleteCounterQuestion(int number) => _tr(
+  it: 'Eliminare il Contatore $number?',
+  en: 'Delete Counter $number?',
+  fr: 'Supprimer le compteur $number ?',
+  es: '¿Eliminar el contador $number?',
+);
+
+static String get resumeSession => _tr(
+  it: 'Riprendi sessione',
+  en: 'Resume session',
+  fr: 'Reprendre la session',
+  es: 'Reanudar sesión',
+);
+
+static String get viewLog => _tr(
+  it: 'Visualizza log',
+  en: 'View log',
+  fr: 'Voir le journal',
+  es: 'Ver registro',
+);
+
+static String get editSpotAndNotes => _tr(
+  it: 'Modifica spot e note',
+  en: 'Edit spot and notes',
+  fr: 'Modifier le spot et les notes',
+  es: 'Editar punto y notas',
+);
+
 }
