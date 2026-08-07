@@ -261,7 +261,8 @@ Future<int> getCastCount(String sessionId) async {
   final events = await (select(sessionLog)
         ..where((t) =>
             t.sessionId.equals(sessionId) &
-            t.eventType.equals(SessionEventType.cast)))
+            t.eventType.equals(SessionEventType.cast) &
+            t.deletedAt.isNull()))
       .get();
 
   return events.length;
@@ -271,7 +272,8 @@ Future<Map<int, int>> getCatchCounters(String sessionId) async {
   final events = await (select(sessionLog)
         ..where((t) =>
             t.sessionId.equals(sessionId) &
-            t.eventType.equals(SessionEventType.catchFish)))
+            t.eventType.equals(SessionEventType.catchFish) &
+            t.deletedAt.isNull()))
       .get();
 
   final counters = <int, int>{};
@@ -284,6 +286,48 @@ Future<Map<int, int>> getCatchCounters(String sessionId) async {
   }
 
   return counters;
+}
+
+Future<DateTime?> getLastCastTime(String sessionId) async {
+  final all = await (select(sessionLog)
+        ..where((t) => t.sessionId.equals(sessionId) & t.deletedAt.isNull()))
+      .get();
+
+  print("===== EVENTI SESSIONE =====");
+
+  for (final e in all) {
+    print(
+      "type=${e.eventType}  counter=${e.counter}  time=${e.timestamp}",
+    );
+  }
+
+  final event = all
+      .where((e) => e.eventType == SessionEventType.cast)
+      .toList();
+
+  if (event.isEmpty) {
+    return null;
+  }
+
+  event.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+  return event.first.timestamp;
+}
+
+Future<DateTime?> getLastCatchTime(String sessionId) async {
+  final event = await (select(sessionLog)
+
+        ..where((t) =>
+            t.sessionId.equals(sessionId) &
+            t.eventType.equals(SessionEventType.catchFish) &
+            t.deletedAt.isNull())
+        ..orderBy([
+          (t) => OrderingTerm.desc(t.timestamp),
+        ])
+        ..limit(1))
+      .getSingleOrNull();
+
+  return event?.timestamp;
 }
 
 Future<void> printSessionLog(String sessionId) async {
@@ -338,7 +382,7 @@ Future<List<SessionLogData>> getSessionEvents(
   String sessionId,
 ) {
   return (select(sessionLog)
-        ..where((t) => t.sessionId.equals(sessionId))
+        ..where((t) => t.sessionId.equals(sessionId) & t.deletedAt.isNull())
         ..orderBy([
           (t) => OrderingTerm.asc(t.timestamp),
         ]))
@@ -367,6 +411,34 @@ Future<void> deleteSessionEvent(
   await (delete(sessionLog)
         ..where((t) => t.id.equals(id)))
       .go();
+}
+
+Future<void> removeLastCatchEvent({
+  required String sessionId,
+  required int counter,
+}) async {
+  final event = await (select(sessionLog)
+        ..where((t) =>
+            t.sessionId.equals(sessionId) &
+            t.eventType.equals(SessionEventType.catchFish) &
+            t.counter.equals(counter) &
+            t.deletedAt.isNull())
+        ..orderBy([
+          (t) => OrderingTerm.desc(t.timestamp),
+        ])
+        ..limit(1))
+      .getSingleOrNull();
+
+  if (event == null) return;
+
+await (update(sessionLog)
+      ..where((t) => t.id.equals(event.id)))
+    .write(
+  SessionLogCompanion(
+    deletedAt: Value(DateTime.now()),
+    synced: const Value(false),
+  ),
+);
 }
 
   Future<bool> completaMeteoSessione(String id) async {

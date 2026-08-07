@@ -85,6 +85,7 @@ void dispose() {
   }
 
 Future<void> startSession() async {
+  print(">>> startSession()");
   await widget.database.startLiveSession(
     widget.session.id,
   );
@@ -110,12 +111,22 @@ await widget.database.addStartEvent(
 }
 
 Future<void> loadLiveData() async {
+  print(">>> loadLiveData()");
   final castCount =
       await widget.database.getCastCount(widget.session.id);
   final catchCounters =
     await widget.database.getCatchCounters(widget.session.id);
 
+  final lastCast =
+    await widget.database.getLastCastTime(widget.session.id);
+
+  final lastCatch =
+    await widget.database.getLastCatchTime(widget.session.id);
+
   if (!mounted) return;
+  print("LAST CAST DB = $lastCast");
+print("LAST CATCH DB = $lastCatch");
+print("NOW = ${DateTime.now()}");
 
 setState(() {
   casts = castCount == 0 ? 1 : castCount;
@@ -130,7 +141,16 @@ setState(() {
       ),
     );
   });
-});}
+
+  lastCastTime = lastCast == null
+      ? Duration.zero
+      : DateTime.now().difference(lastCast);
+
+  lastCatchTime = lastCatch == null
+      ? Duration.zero
+      : DateTime.now().difference(lastCatch);
+});
+;}
 
 
 Future<void> cast() async {
@@ -211,7 +231,7 @@ Widget build(BuildContext context) {
 
             // TEMPO ULTIMA CATTURA
             Text(
-              format(lastCatchTime),
+              format(lastCastTime),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 54,
@@ -329,9 +349,12 @@ const Divider(color: Colors.white24),
     quantity: c.quantity,
 onMinus: () async {
   if (c.quantity > 0) {
-    setState(() {
-      c.quantity--;
-    });
+await widget.database.removeLastCatchEvent(
+  sessionId: widget.session.id,
+  counter: c.counter,
+);
+
+await loadLiveData();  
     return;
   }
 
