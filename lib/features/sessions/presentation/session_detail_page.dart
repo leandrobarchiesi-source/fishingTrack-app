@@ -6,6 +6,8 @@ import '../../../database/app_database.dart';
 import '../../../core/t.dart';
 import 'live_session_page.dart';
 import '../../../core/session_constants.dart';
+import 'session_log_page.dart';
+
 
 class SessionDetailPage extends StatefulWidget {
     final FishingSession session;
@@ -393,36 +395,25 @@ Card(
             height: 55,
             child: ElevatedButton.icon(
               icon: const Icon(Icons.play_arrow),
-              label: const Text(
-                "INIZIA SESSIONE",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
+              label: Text(T.startSession),
               onPressed: () async {
-await Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => LiveSessionPage(
-      database: widget.database,
-      session: session,
-    ),
-  ),
-);
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LiveSessionPage(
+                      database: widget.database,
+                      session: session,
+                    ),
+                  ),
+                );
 
-await reloadSession();
-
-             },
+                await reloadSession();
+              },
             ),
           ),
 
           const SizedBox(height: 12),
-        ],
 
-        // ===== MODIFICA =====
-
-        if (isSummary || (isLive && isPlanned)) ...[
           SizedBox(
             height: 55,
             child: ElevatedButton.icon(
@@ -447,11 +438,7 @@ await reloadSession();
           ),
 
           const SizedBox(height: 12),
-        ],
 
-        // ===== ELIMINA =====
-
-        if (isSummary || (isLive && isPlanned))
           SizedBox(
             height: 55,
             child: OutlinedButton.icon(
@@ -460,63 +447,131 @@ await reloadSession();
               onPressed: eliminaSessione,
             ),
           ),
+        ],
 
         // ===== LIVE RUNNING =====
 
-if (isLive && isRunning)
-  SizedBox(
-    height: 55,
-    child: ElevatedButton.icon(
-      icon: const Icon(Icons.play_circle_fill),
-      label: Text(T.resumeSession),
-onPressed: () async {
-await Navigator.push(
-  context,
-  MaterialPageRoute(
-    builder: (_) => LiveSessionPage(
-      database: widget.database,
-      session: session,
-    ),
+        if (isLive && isRunning) ...[
+          SizedBox(
+            height: 55,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.play_circle_fill),
+              label: Text(T.resumeSession),
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => LiveSessionPage(
+                      database: widget.database,
+                      session: session,
+                    ),
+                  ),
+                );
+
+                await reloadSession();
+              },
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 55,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.delete),
+              label: Text(T.deleteSession),
+              onPressed: eliminaSessione,
+            ),
+          ),
+        ],
+
+        // ===== LIVE COMPLETED =====
+
+        if (isLive && isCompleted) ...[
+SizedBox(
+  height: 55,
+  child: ElevatedButton.icon(
+    icon: const Icon(Icons.history),
+    label: Text(T.viewLog),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => SessionLogPage(
+            database: widget.database,
+            session: session,
+          ),
+        ),
+      );
+    },
   ),
-);
+),
+          const SizedBox(height: 12),
 
-await reloadSession();  
-},
-    ),
-  ),
+          SizedBox(
+            height: 55,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.edit),
+              label: Text(T.editSpotAndNotes),
+              onPressed: () {
+                // TODO
+              },
+            ),
+          ),
 
-// ===== LIVE COMPLETED =====
+          const SizedBox(height: 12),
 
-if (isLive && isCompleted) ...[
-  SizedBox(
-    height: 55,
-    child: ElevatedButton.icon(
-      icon: const Icon(Icons.history),
-      label: Text(T.viewLog),
-      onPressed: () {
-        // TODO
-      },
-    ),
-  ),
+          SizedBox(
+            height: 55,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.delete),
+              label: Text(T.deleteSession),
+              onPressed: eliminaSessione,
+            ),
+          ),
+        ],
 
-  const SizedBox(height: 12),
+        // ===== SESSIONE STANDARD =====
 
-  SizedBox(
-    height: 55,
-    child: ElevatedButton.icon(
-      icon: const Icon(Icons.edit),
-      label: Text(T.editSpotAndNotes),
-      onPressed: () {
-        // TODO
-      },
-    ),
-  ),
-]
+        if (isSummary) ...[
+          SizedBox(
+            height: 55,
+            child: ElevatedButton.icon(
+              icon: const Icon(Icons.edit),
+              label: Text(T.editSession),
+              onPressed: () async {
+                final result = await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => NewSessionPage(
+                      database: widget.database,
+                      session: session,
+                    ),
+                  ),
+                );
+
+                if (context.mounted && result == true) {
+                  Navigator.pop(context, true);
+                }
+              },
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          SizedBox(
+            height: 55,
+            child: OutlinedButton.icon(
+              icon: const Icon(Icons.delete),
+              label: Text(T.deleteSession),
+              onPressed: eliminaSessione,
+            ),
+          ),
+        ],
       ],
     ),
   ),
-),
-  ],
+)  ],
       ),
     );
       }

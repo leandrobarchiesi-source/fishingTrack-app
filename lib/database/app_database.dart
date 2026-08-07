@@ -389,6 +389,14 @@ Future<List<SessionLogData>> getSessionEvents(
       .get();
 }
 
+Future<void> addEndEvent(String sessionId) async {
+    print(">>> END EVENT");
+  await addSessionEvent(
+    sessionId: sessionId,
+    eventType: SessionEventType.end,
+  );
+}
+
 Future<SessionLogData?> getLastCatch(
   String sessionId,
   int counter,

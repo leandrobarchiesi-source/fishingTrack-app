@@ -172,15 +172,24 @@ await widget.database.addCastEvent(
 }
 
 Future<void> endSession() async {
+  print(">>> END SESSION");
+
+  await widget.database.addEndEvent(
+    widget.session.id,
+  );
+
+  print(">>> DOPO END EVENT");
+
   await widget.database.endLiveSession(
     widget.session.id,
   );
+
+  print(">>> DOPO UPDATE");
 
   if (!mounted) return;
 
   Navigator.pop(context, true);
 }
-
 
 @override
 Widget build(BuildContext context) {
