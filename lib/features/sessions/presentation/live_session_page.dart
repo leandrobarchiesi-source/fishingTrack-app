@@ -112,13 +112,25 @@ await widget.database.addStartEvent(
 Future<void> loadLiveData() async {
   final castCount =
       await widget.database.getCastCount(widget.session.id);
+  final catchCounters =
+    await widget.database.getCatchCounters(widget.session.id);
 
   if (!mounted) return;
 
-  setState(() {
-    casts = castCount == 0 ? 1 : castCount;
+setState(() {
+  casts = castCount == 0 ? 1 : castCount;
+
+  counters.clear();
+
+  catchCounters.forEach((number, qty) {
+    counters.add(
+      LiveCounter(
+        counter: number,
+        quantity: qty,
+      ),
+    );
   });
-}
+});}
 
 
 Future<void> cast() async {
@@ -358,12 +370,21 @@ onMinus: () async {
     }
   });
 },
-    onPlus: () {
-      setState(() {
-        c.quantity++;
-        lastCatchTime = Duration.zero;
-      });
-    },
+onPlus: () async {
+  await widget.database.addCatchEvent(
+    sessionId: widget.session.id,
+    counter: c.counter,
+  );
+
+  await widget.database.printSessionLog(
+    widget.session.id,
+  );
+
+  setState(() {
+    c.quantity++;
+    lastCatchTime = Duration.zero;
+  });
+},
   ),
 ),
 

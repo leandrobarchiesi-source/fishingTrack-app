@@ -267,6 +267,25 @@ Future<int> getCastCount(String sessionId) async {
   return events.length;
 }
 
+Future<Map<int, int>> getCatchCounters(String sessionId) async {
+  final events = await (select(sessionLog)
+        ..where((t) =>
+            t.sessionId.equals(sessionId) &
+            t.eventType.equals(SessionEventType.catchFish)))
+      .get();
+
+  final counters = <int, int>{};
+
+  for (final e in events) {
+    if (e.counter == null) continue;
+
+    counters[e.counter!] =
+        (counters[e.counter!] ?? 0) + 1;
+  }
+
+  return counters;
+}
+
 Future<void> printSessionLog(String sessionId) async {
   final events = await getSessionEvents(sessionId);
 
