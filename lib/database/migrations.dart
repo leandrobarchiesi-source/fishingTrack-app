@@ -89,6 +89,16 @@ if (from < 14) {
   await m.createTable(
 db.liveCounterEntries  );
 }
+
+if (from < 15) {
+  await m.createTable(
+    db.counterNames,
+  );
+
+  await m.createTable(
+    db.sessionCounters,
+  );
+}
     },
   );
 }

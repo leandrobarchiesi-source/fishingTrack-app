@@ -39,8 +39,6 @@ Duration sessionTime = Duration.zero;      // Durata sessione
 
 @override
 void initState() {
-  debugPrint("STATUS: ${widget.session.status}");
-  debugPrint("ORA INIZIO: ${widget.session.oraInizio}");
 
   super.initState();
 
@@ -85,7 +83,6 @@ void dispose() {
   }
 
 Future<void> startSession() async {
-  print(">>> startSession()");
   await widget.database.startLiveSession(
     widget.session.id,
   );
@@ -111,7 +108,6 @@ await widget.database.addStartEvent(
 }
 
 Future<void> loadLiveData() async {
-  print(">>> loadLiveData()");
   final castCount =
       await widget.database.getCastCount(widget.session.id);
   final catchCounters =
@@ -124,9 +120,6 @@ Future<void> loadLiveData() async {
     await widget.database.getLastCatchTime(widget.session.id);
 
   if (!mounted) return;
-  print("LAST CAST DB = $lastCast");
-print("LAST CATCH DB = $lastCatch");
-print("NOW = ${DateTime.now()}");
 
 setState(() {
   casts = castCount == 0 ? 1 : castCount;
@@ -172,24 +165,57 @@ await widget.database.addCastEvent(
 }
 
 Future<void> endSession() async {
-  print(">>> END SESSION");
-
   await widget.database.addEndEvent(
     widget.session.id,
   );
-
-  print(">>> DOPO END EVENT");
 
   await widget.database.endLiveSession(
     widget.session.id,
   );
 
-  print(">>> DOPO UPDATE");
+  await widget.database.completaMeteoSessione(
+    widget.session.id,
+  );
 
   if (!mounted) return;
 
+  // qui inseriremo il popup
+
+final inserisci = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text("Temperatura acqua"),
+        content: const Text(
+          "Vuoi inserire la temperatura dell'acqua?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("Non ora"),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("Inserisci"),
+          ),
+        ],
+      ),
+    ) ??
+    false;
+
+if (!mounted) return;
+
+if (!inserisci) {
   Navigator.pop(context, true);
+  return;
 }
+
+// TODO: dialog temperatura acqua
+
+Navigator.pop(context, true);
+}
+// qui apriremo il dialog per inserire la temperatura}
+
+
 
 @override
 Widget build(BuildContext context) {

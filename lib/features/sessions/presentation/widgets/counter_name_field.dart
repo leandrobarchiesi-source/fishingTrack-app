@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../models/catch_row.dart';
 import '../../../../core/t.dart';
-import 'autocomplete_field.dart';
+import 'species_field.dart';
 
 class CatchRowWidget extends StatelessWidget {
   final CatchRow catchRow;
@@ -30,10 +30,9 @@ class CatchRowWidget extends StatelessWidget {
     return Row(
       children: [
         Expanded(
-          child: AutocompleteField(
+          child: SpeciesField(
             controller: controller,
-            availableValues: availableSpecies,
-            hintText: T.species,
+            availableSpecies: availableSpecies,
             onChanged: (value) {
               catchRow.species = value;
             },

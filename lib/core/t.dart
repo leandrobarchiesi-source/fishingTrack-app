@@ -1073,4 +1073,46 @@ static String get editSpotAndNotes => _tr(
   es: 'Editar punto y notas',
 );
 
+static String get editSessionDetails => _tr(
+  it: 'Modifica dettagli sessione',
+  en: 'Edit session details',
+  fr: 'Modifier les détails de la session',
+  es: 'Editar detalles de la sesión',
+);
+
+static String get counterName => _tr(
+  it: 'Nome contatore',
+  en: 'Counter name',
+  fr: 'Nom du compteur',
+  es: 'Nombre del contador',
+);
+
+static String get sessionDetails => _tr(
+  it: 'Dettagli sessione',
+  en: 'Session details',
+  fr: 'Détails de la session',
+  es: 'Detalles de la sesión',
+);
+
+static String get waterTemperatureQuestion => _tr(
+  it: 'Vuoi inserire la temperatura dell\'acqua?',
+  en: 'Do you want to enter the water temperature?',
+  fr: 'Voulez-vous saisir la température de l\'eau ?',
+  es: '¿Desea introducir la temperatura del agua?',
+);
+
+static String get notNow => _tr(
+  it: 'Non ora',
+  en: 'Not now',
+  fr: 'Pas maintenant',
+  es: 'Ahora no',
+);
+
+static String get insert => _tr(
+  it: 'Inserisci',
+  en: 'Enter',
+  fr: 'Saisir',
+  es: 'Introducir',
+);
+
 }

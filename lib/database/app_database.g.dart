@@ -3309,6 +3309,795 @@ class LiveCounterEntriesCompanion extends UpdateCompanion<LiveCounterEntry> {
   }
 }
 
+class $CounterNamesTable extends CounterNames
+    with TableInfo<$CounterNamesTable, CounterName> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $CounterNamesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+      'id', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _nameMeta = const VerificationMeta('name');
+  @override
+  late final GeneratedColumn<String> name = GeneratedColumn<String>(
+      'name', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _speciesMeta =
+      const VerificationMeta('species');
+  @override
+  late final GeneratedColumn<String> species = GeneratedColumn<String>(
+      'species', aliasedName, true,
+      type: DriftSqlType.string, requiredDuringInsert: false);
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+      'synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns =>
+      [id, name, species, synced, createdAt, updatedAt, deletedAt];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'counter_names';
+  @override
+  VerificationContext validateIntegrity(Insertable<CounterName> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('name')) {
+      context.handle(
+          _nameMeta, name.isAcceptableOrUnknown(data['name']!, _nameMeta));
+    } else if (isInserting) {
+      context.missing(_nameMeta);
+    }
+    if (data.containsKey('species')) {
+      context.handle(_speciesMeta,
+          species.isAcceptableOrUnknown(data['species']!, _speciesMeta));
+    }
+    if (data.containsKey('synced')) {
+      context.handle(_syncedMeta,
+          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  CounterName map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return CounterName(
+      id: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}id'])!,
+      name: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}name'])!,
+      species: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}species']),
+      synced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+    );
+  }
+
+  @override
+  $CounterNamesTable createAlias(String alias) {
+    return $CounterNamesTable(attachedDatabase, alias);
+  }
+}
+
+class CounterName extends DataClass implements Insertable<CounterName> {
+  final String id;
+  final String name;
+  final String? species;
+  final bool synced;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const CounterName(
+      {required this.id,
+      required this.name,
+      this.species,
+      required this.synced,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['name'] = Variable<String>(name);
+    if (!nullToAbsent || species != null) {
+      map['species'] = Variable<String>(species);
+    }
+    map['synced'] = Variable<bool>(synced);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  CounterNamesCompanion toCompanion(bool nullToAbsent) {
+    return CounterNamesCompanion(
+      id: Value(id),
+      name: Value(name),
+      species: species == null && nullToAbsent
+          ? const Value.absent()
+          : Value(species),
+      synced: Value(synced),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory CounterName.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return CounterName(
+      id: serializer.fromJson<String>(json['id']),
+      name: serializer.fromJson<String>(json['name']),
+      species: serializer.fromJson<String?>(json['species']),
+      synced: serializer.fromJson<bool>(json['synced']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'name': serializer.toJson<String>(name),
+      'species': serializer.toJson<String?>(species),
+      'synced': serializer.toJson<bool>(synced),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  CounterName copyWith(
+          {String? id,
+          String? name,
+          Value<String?> species = const Value.absent(),
+          bool? synced,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent()}) =>
+      CounterName(
+        id: id ?? this.id,
+        name: name ?? this.name,
+        species: species.present ? species.value : this.species,
+        synced: synced ?? this.synced,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+      );
+  CounterName copyWithCompanion(CounterNamesCompanion data) {
+    return CounterName(
+      id: data.id.present ? data.id.value : this.id,
+      name: data.name.present ? data.name.value : this.name,
+      species: data.species.present ? data.species.value : this.species,
+      synced: data.synced.present ? data.synced.value : this.synced,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CounterName(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('species: $species, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, name, species, synced, createdAt, updatedAt, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is CounterName &&
+          other.id == this.id &&
+          other.name == this.name &&
+          other.species == this.species &&
+          other.synced == this.synced &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class CounterNamesCompanion extends UpdateCompanion<CounterName> {
+  final Value<String> id;
+  final Value<String> name;
+  final Value<String?> species;
+  final Value<bool> synced;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const CounterNamesCompanion({
+    this.id = const Value.absent(),
+    this.name = const Value.absent(),
+    this.species = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  CounterNamesCompanion.insert({
+    required String id,
+    required String name,
+    this.species = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : id = Value(id),
+        name = Value(name);
+  static Insertable<CounterName> custom({
+    Expression<String>? id,
+    Expression<String>? name,
+    Expression<String>? species,
+    Expression<bool>? synced,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (name != null) 'name': name,
+      if (species != null) 'species': species,
+      if (synced != null) 'synced': synced,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  CounterNamesCompanion copyWith(
+      {Value<String>? id,
+      Value<String>? name,
+      Value<String?>? species,
+      Value<bool>? synced,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<int>? rowid}) {
+    return CounterNamesCompanion(
+      id: id ?? this.id,
+      name: name ?? this.name,
+      species: species ?? this.species,
+      synced: synced ?? this.synced,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (name.present) {
+      map['name'] = Variable<String>(name.value);
+    }
+    if (species.present) {
+      map['species'] = Variable<String>(species.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('CounterNamesCompanion(')
+          ..write('id: $id, ')
+          ..write('name: $name, ')
+          ..write('species: $species, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SessionCountersTable extends SessionCounters
+    with TableInfo<$SessionCountersTable, SessionCounter> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionCountersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _sessionIdMeta =
+      const VerificationMeta('sessionId');
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+      'session_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES fishing_sessions (id) ON DELETE CASCADE'));
+  static const VerificationMeta _counterNumberMeta =
+      const VerificationMeta('counterNumber');
+  @override
+  late final GeneratedColumn<int> counterNumber = GeneratedColumn<int>(
+      'counter_number', aliasedName, false,
+      type: DriftSqlType.int, requiredDuringInsert: true);
+  static const VerificationMeta _counterNameIdMeta =
+      const VerificationMeta('counterNameId');
+  @override
+  late final GeneratedColumn<String> counterNameId = GeneratedColumn<String>(
+      'counter_name_id', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: true,
+      defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES counter_names (id) ON DELETE RESTRICT'));
+  static const VerificationMeta _syncedMeta = const VerificationMeta('synced');
+  @override
+  late final GeneratedColumn<bool> synced = GeneratedColumn<bool>(
+      'synced', aliasedName, false,
+      type: DriftSqlType.bool,
+      requiredDuringInsert: false,
+      defaultConstraints:
+          GeneratedColumn.constraintIsAlways('CHECK ("synced" IN (0, 1))'),
+      defaultValue: const Constant(false));
+  static const VerificationMeta _createdAtMeta =
+      const VerificationMeta('createdAt');
+  @override
+  late final GeneratedColumn<DateTime> createdAt = GeneratedColumn<DateTime>(
+      'created_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _updatedAtMeta =
+      const VerificationMeta('updatedAt');
+  @override
+  late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
+      'updated_at', aliasedName, false,
+      type: DriftSqlType.dateTime,
+      requiredDuringInsert: false,
+      defaultValue: currentDateAndTime);
+  static const VerificationMeta _deletedAtMeta =
+      const VerificationMeta('deletedAt');
+  @override
+  late final GeneratedColumn<DateTime> deletedAt = GeneratedColumn<DateTime>(
+      'deleted_at', aliasedName, true,
+      type: DriftSqlType.dateTime, requiredDuringInsert: false);
+  @override
+  List<GeneratedColumn> get $columns => [
+        sessionId,
+        counterNumber,
+        counterNameId,
+        synced,
+        createdAt,
+        updatedAt,
+        deletedAt
+      ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'session_counters';
+  @override
+  VerificationContext validateIntegrity(Insertable<SessionCounter> instance,
+      {bool isInserting = false}) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('session_id')) {
+      context.handle(_sessionIdMeta,
+          sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta));
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('counter_number')) {
+      context.handle(
+          _counterNumberMeta,
+          counterNumber.isAcceptableOrUnknown(
+              data['counter_number']!, _counterNumberMeta));
+    } else if (isInserting) {
+      context.missing(_counterNumberMeta);
+    }
+    if (data.containsKey('counter_name_id')) {
+      context.handle(
+          _counterNameIdMeta,
+          counterNameId.isAcceptableOrUnknown(
+              data['counter_name_id']!, _counterNameIdMeta));
+    } else if (isInserting) {
+      context.missing(_counterNameIdMeta);
+    }
+    if (data.containsKey('synced')) {
+      context.handle(_syncedMeta,
+          synced.isAcceptableOrUnknown(data['synced']!, _syncedMeta));
+    }
+    if (data.containsKey('created_at')) {
+      context.handle(_createdAtMeta,
+          createdAt.isAcceptableOrUnknown(data['created_at']!, _createdAtMeta));
+    }
+    if (data.containsKey('updated_at')) {
+      context.handle(_updatedAtMeta,
+          updatedAt.isAcceptableOrUnknown(data['updated_at']!, _updatedAtMeta));
+    }
+    if (data.containsKey('deleted_at')) {
+      context.handle(_deletedAtMeta,
+          deletedAt.isAcceptableOrUnknown(data['deleted_at']!, _deletedAtMeta));
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {sessionId, counterNumber};
+  @override
+  SessionCounter map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionCounter(
+      sessionId: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}session_id'])!,
+      counterNumber: attachedDatabase.typeMapping
+          .read(DriftSqlType.int, data['${effectivePrefix}counter_number'])!,
+      counterNameId: attachedDatabase.typeMapping.read(
+          DriftSqlType.string, data['${effectivePrefix}counter_name_id'])!,
+      synced: attachedDatabase.typeMapping
+          .read(DriftSqlType.bool, data['${effectivePrefix}synced'])!,
+      createdAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
+      updatedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      deletedAt: attachedDatabase.typeMapping
+          .read(DriftSqlType.dateTime, data['${effectivePrefix}deleted_at']),
+    );
+  }
+
+  @override
+  $SessionCountersTable createAlias(String alias) {
+    return $SessionCountersTable(attachedDatabase, alias);
+  }
+}
+
+class SessionCounter extends DataClass implements Insertable<SessionCounter> {
+  final String sessionId;
+  final int counterNumber;
+  final String counterNameId;
+  final bool synced;
+  final DateTime createdAt;
+  final DateTime updatedAt;
+  final DateTime? deletedAt;
+  const SessionCounter(
+      {required this.sessionId,
+      required this.counterNumber,
+      required this.counterNameId,
+      required this.synced,
+      required this.createdAt,
+      required this.updatedAt,
+      this.deletedAt});
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['session_id'] = Variable<String>(sessionId);
+    map['counter_number'] = Variable<int>(counterNumber);
+    map['counter_name_id'] = Variable<String>(counterNameId);
+    map['synced'] = Variable<bool>(synced);
+    map['created_at'] = Variable<DateTime>(createdAt);
+    map['updated_at'] = Variable<DateTime>(updatedAt);
+    if (!nullToAbsent || deletedAt != null) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt);
+    }
+    return map;
+  }
+
+  SessionCountersCompanion toCompanion(bool nullToAbsent) {
+    return SessionCountersCompanion(
+      sessionId: Value(sessionId),
+      counterNumber: Value(counterNumber),
+      counterNameId: Value(counterNameId),
+      synced: Value(synced),
+      createdAt: Value(createdAt),
+      updatedAt: Value(updatedAt),
+      deletedAt: deletedAt == null && nullToAbsent
+          ? const Value.absent()
+          : Value(deletedAt),
+    );
+  }
+
+  factory SessionCounter.fromJson(Map<String, dynamic> json,
+      {ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionCounter(
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      counterNumber: serializer.fromJson<int>(json['counterNumber']),
+      counterNameId: serializer.fromJson<String>(json['counterNameId']),
+      synced: serializer.fromJson<bool>(json['synced']),
+      createdAt: serializer.fromJson<DateTime>(json['createdAt']),
+      updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      deletedAt: serializer.fromJson<DateTime?>(json['deletedAt']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'sessionId': serializer.toJson<String>(sessionId),
+      'counterNumber': serializer.toJson<int>(counterNumber),
+      'counterNameId': serializer.toJson<String>(counterNameId),
+      'synced': serializer.toJson<bool>(synced),
+      'createdAt': serializer.toJson<DateTime>(createdAt),
+      'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'deletedAt': serializer.toJson<DateTime?>(deletedAt),
+    };
+  }
+
+  SessionCounter copyWith(
+          {String? sessionId,
+          int? counterNumber,
+          String? counterNameId,
+          bool? synced,
+          DateTime? createdAt,
+          DateTime? updatedAt,
+          Value<DateTime?> deletedAt = const Value.absent()}) =>
+      SessionCounter(
+        sessionId: sessionId ?? this.sessionId,
+        counterNumber: counterNumber ?? this.counterNumber,
+        counterNameId: counterNameId ?? this.counterNameId,
+        synced: synced ?? this.synced,
+        createdAt: createdAt ?? this.createdAt,
+        updatedAt: updatedAt ?? this.updatedAt,
+        deletedAt: deletedAt.present ? deletedAt.value : this.deletedAt,
+      );
+  SessionCounter copyWithCompanion(SessionCountersCompanion data) {
+    return SessionCounter(
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      counterNumber: data.counterNumber.present
+          ? data.counterNumber.value
+          : this.counterNumber,
+      counterNameId: data.counterNameId.present
+          ? data.counterNameId.value
+          : this.counterNameId,
+      synced: data.synced.present ? data.synced.value : this.synced,
+      createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
+      updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      deletedAt: data.deletedAt.present ? data.deletedAt.value : this.deletedAt,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionCounter(')
+          ..write('sessionId: $sessionId, ')
+          ..write('counterNumber: $counterNumber, ')
+          ..write('counterNameId: $counterNameId, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(sessionId, counterNumber, counterNameId,
+      synced, createdAt, updatedAt, deletedAt);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionCounter &&
+          other.sessionId == this.sessionId &&
+          other.counterNumber == this.counterNumber &&
+          other.counterNameId == this.counterNameId &&
+          other.synced == this.synced &&
+          other.createdAt == this.createdAt &&
+          other.updatedAt == this.updatedAt &&
+          other.deletedAt == this.deletedAt);
+}
+
+class SessionCountersCompanion extends UpdateCompanion<SessionCounter> {
+  final Value<String> sessionId;
+  final Value<int> counterNumber;
+  final Value<String> counterNameId;
+  final Value<bool> synced;
+  final Value<DateTime> createdAt;
+  final Value<DateTime> updatedAt;
+  final Value<DateTime?> deletedAt;
+  final Value<int> rowid;
+  const SessionCountersCompanion({
+    this.sessionId = const Value.absent(),
+    this.counterNumber = const Value.absent(),
+    this.counterNameId = const Value.absent(),
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionCountersCompanion.insert({
+    required String sessionId,
+    required int counterNumber,
+    required String counterNameId,
+    this.synced = const Value.absent(),
+    this.createdAt = const Value.absent(),
+    this.updatedAt = const Value.absent(),
+    this.deletedAt = const Value.absent(),
+    this.rowid = const Value.absent(),
+  })  : sessionId = Value(sessionId),
+        counterNumber = Value(counterNumber),
+        counterNameId = Value(counterNameId);
+  static Insertable<SessionCounter> custom({
+    Expression<String>? sessionId,
+    Expression<int>? counterNumber,
+    Expression<String>? counterNameId,
+    Expression<bool>? synced,
+    Expression<DateTime>? createdAt,
+    Expression<DateTime>? updatedAt,
+    Expression<DateTime>? deletedAt,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (sessionId != null) 'session_id': sessionId,
+      if (counterNumber != null) 'counter_number': counterNumber,
+      if (counterNameId != null) 'counter_name_id': counterNameId,
+      if (synced != null) 'synced': synced,
+      if (createdAt != null) 'created_at': createdAt,
+      if (updatedAt != null) 'updated_at': updatedAt,
+      if (deletedAt != null) 'deleted_at': deletedAt,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionCountersCompanion copyWith(
+      {Value<String>? sessionId,
+      Value<int>? counterNumber,
+      Value<String>? counterNameId,
+      Value<bool>? synced,
+      Value<DateTime>? createdAt,
+      Value<DateTime>? updatedAt,
+      Value<DateTime?>? deletedAt,
+      Value<int>? rowid}) {
+    return SessionCountersCompanion(
+      sessionId: sessionId ?? this.sessionId,
+      counterNumber: counterNumber ?? this.counterNumber,
+      counterNameId: counterNameId ?? this.counterNameId,
+      synced: synced ?? this.synced,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (counterNumber.present) {
+      map['counter_number'] = Variable<int>(counterNumber.value);
+    }
+    if (counterNameId.present) {
+      map['counter_name_id'] = Variable<String>(counterNameId.value);
+    }
+    if (synced.present) {
+      map['synced'] = Variable<bool>(synced.value);
+    }
+    if (createdAt.present) {
+      map['created_at'] = Variable<DateTime>(createdAt.value);
+    }
+    if (updatedAt.present) {
+      map['updated_at'] = Variable<DateTime>(updatedAt.value);
+    }
+    if (deletedAt.present) {
+      map['deleted_at'] = Variable<DateTime>(deletedAt.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionCountersCompanion(')
+          ..write('sessionId: $sessionId, ')
+          ..write('counterNumber: $counterNumber, ')
+          ..write('counterNameId: $counterNameId, ')
+          ..write('synced: $synced, ')
+          ..write('createdAt: $createdAt, ')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('deletedAt: $deletedAt, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -3320,6 +4109,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SessionLogTable sessionLog = $SessionLogTable(this);
   late final $LiveCounterEntriesTable liveCounterEntries =
       $LiveCounterEntriesTable(this);
+  late final $CounterNamesTable counterNames = $CounterNamesTable(this);
+  late final $SessionCountersTable sessionCounters =
+      $SessionCountersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -3330,7 +4122,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         profiles,
         sessionCatch,
         sessionLog,
-        liveCounterEntries
+        liveCounterEntries,
+        counterNames,
+        sessionCounters
       ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules(
@@ -3347,6 +4141,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
                 limitUpdateKind: UpdateKind.delete),
             result: [
               TableUpdate('session_log', kind: UpdateKind.delete),
+            ],
+          ),
+          WritePropagation(
+            on: TableUpdateQuery.onTableName('fishing_sessions',
+                limitUpdateKind: UpdateKind.delete),
+            result: [
+              TableUpdate('session_counters', kind: UpdateKind.delete),
             ],
           ),
         ],
@@ -3439,6 +4240,23 @@ final class $$FishingSessionsTableReferences extends BaseReferences<
         .filter((f) => f.sessionId.id($_item.id));
 
     final cache = $_typedResult.readTableOrNull(_sessionLogRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+
+  static MultiTypedResultKey<$SessionCountersTable, List<SessionCounter>>
+      _sessionCountersRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.sessionCounters,
+              aliasName: $_aliasNameGenerator(
+                  db.fishingSessions.id, db.sessionCounters.sessionId));
+
+  $$SessionCountersTableProcessedTableManager get sessionCountersRefs {
+    final manager =
+        $$SessionCountersTableTableManager($_db, $_db.sessionCounters)
+            .filter((f) => f.sessionId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_sessionCountersRefsTable($_db));
     return ProcessedTableManager(
         manager.$state.copyWith(prefetchedData: cache));
   }
@@ -3557,6 +4375,27 @@ class $$FishingSessionsTableFilterComposer
             $$SessionLogTableFilterComposer(
               $db: $db,
               $table: $db.sessionLog,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+
+  Expression<bool> sessionCountersRefs(
+      Expression<bool> Function($$SessionCountersTableFilterComposer f) f) {
+    final $$SessionCountersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionCounters,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionCountersTableFilterComposer(
+              $db: $db,
+              $table: $db.sessionCounters,
               $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
               joinBuilder: joinBuilder,
               $removeJoinBuilderFromRootComposer:
@@ -3765,6 +4604,27 @@ class $$FishingSessionsTableAnnotationComposer
             ));
     return f(composer);
   }
+
+  Expression<T> sessionCountersRefs<T extends Object>(
+      Expression<T> Function($$SessionCountersTableAnnotationComposer a) f) {
+    final $$SessionCountersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionCounters,
+        getReferencedColumn: (t) => t.sessionId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionCountersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sessionCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
 }
 
 class $$FishingSessionsTableTableManager extends RootTableManager<
@@ -3778,7 +4638,10 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
     $$FishingSessionsTableUpdateCompanionBuilder,
     (FishingSession, $$FishingSessionsTableReferences),
     FishingSession,
-    PrefetchHooks Function({bool sessionCatchRefs, bool sessionLogRefs})> {
+    PrefetchHooks Function(
+        {bool sessionCatchRefs,
+        bool sessionLogRefs,
+        bool sessionCountersRefs})> {
   $$FishingSessionsTableTableManager(
       _$AppDatabase db, $FishingSessionsTable table)
       : super(TableManagerState(
@@ -3901,12 +4764,15 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
                   ))
               .toList(),
           prefetchHooksCallback: (
-              {sessionCatchRefs = false, sessionLogRefs = false}) {
+              {sessionCatchRefs = false,
+              sessionLogRefs = false,
+              sessionCountersRefs = false}) {
             return PrefetchHooks(
               db: db,
               explicitlyWatchedTables: [
                 if (sessionCatchRefs) db.sessionCatch,
-                if (sessionLogRefs) db.sessionLog
+                if (sessionLogRefs) db.sessionLog,
+                if (sessionCountersRefs) db.sessionCounters
               ],
               addJoins: null,
               getPrefetchedDataCallback: (items) async {
@@ -3934,6 +4800,18 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
                         referencedItemsForCurrentItem:
                             (item, referencedItems) => referencedItems
                                 .where((e) => e.sessionId == item.id),
+                        typedResults: items),
+                  if (sessionCountersRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$FishingSessionsTableReferences
+                            ._sessionCountersRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$FishingSessionsTableReferences(db, table, p0)
+                                .sessionCountersRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.sessionId == item.id),
                         typedResults: items)
                 ];
               },
@@ -3953,7 +4831,10 @@ typedef $$FishingSessionsTableProcessedTableManager = ProcessedTableManager<
     $$FishingSessionsTableUpdateCompanionBuilder,
     (FishingSession, $$FishingSessionsTableReferences),
     FishingSession,
-    PrefetchHooks Function({bool sessionCatchRefs, bool sessionLogRefs})>;
+    PrefetchHooks Function(
+        {bool sessionCatchRefs,
+        bool sessionLogRefs,
+        bool sessionCountersRefs})>;
 typedef $$SpotsTableCreateCompanionBuilder = SpotsCompanion Function({
   required String id,
   required String userId,
@@ -5276,6 +6157,678 @@ typedef $$LiveCounterEntriesTableProcessedTableManager = ProcessedTableManager<
     ),
     LiveCounterEntry,
     PrefetchHooks Function()>;
+typedef $$CounterNamesTableCreateCompanionBuilder = CounterNamesCompanion
+    Function({
+  required String id,
+  required String name,
+  Value<String?> species,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$CounterNamesTableUpdateCompanionBuilder = CounterNamesCompanion
+    Function({
+  Value<String> id,
+  Value<String> name,
+  Value<String?> species,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+final class $$CounterNamesTableReferences
+    extends BaseReferences<_$AppDatabase, $CounterNamesTable, CounterName> {
+  $$CounterNamesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static MultiTypedResultKey<$SessionCountersTable, List<SessionCounter>>
+      _sessionCountersRefsTable(_$AppDatabase db) =>
+          MultiTypedResultKey.fromTable(db.sessionCounters,
+              aliasName: $_aliasNameGenerator(
+                  db.counterNames.id, db.sessionCounters.counterNameId));
+
+  $$SessionCountersTableProcessedTableManager get sessionCountersRefs {
+    final manager =
+        $$SessionCountersTableTableManager($_db, $_db.sessionCounters)
+            .filter((f) => f.counterNameId.id($_item.id));
+
+    final cache =
+        $_typedResult.readTableOrNull(_sessionCountersRefsTable($_db));
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: cache));
+  }
+}
+
+class $$CounterNamesTableFilterComposer
+    extends Composer<_$AppDatabase, $CounterNamesTable> {
+  $$CounterNamesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get species => $composableBuilder(
+      column: $table.species, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  Expression<bool> sessionCountersRefs(
+      Expression<bool> Function($$SessionCountersTableFilterComposer f) f) {
+    final $$SessionCountersTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionCounters,
+        getReferencedColumn: (t) => t.counterNameId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionCountersTableFilterComposer(
+              $db: $db,
+              $table: $db.sessionCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$CounterNamesTableOrderingComposer
+    extends Composer<_$AppDatabase, $CounterNamesTable> {
+  $$CounterNamesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+      column: $table.id, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get name => $composableBuilder(
+      column: $table.name, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get species => $composableBuilder(
+      column: $table.species, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+}
+
+class $$CounterNamesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $CounterNamesTable> {
+  $$CounterNamesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get name =>
+      $composableBuilder(column: $table.name, builder: (column) => column);
+
+  GeneratedColumn<String> get species =>
+      $composableBuilder(column: $table.species, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  Expression<T> sessionCountersRefs<T extends Object>(
+      Expression<T> Function($$SessionCountersTableAnnotationComposer a) f) {
+    final $$SessionCountersTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.id,
+        referencedTable: $db.sessionCounters,
+        getReferencedColumn: (t) => t.counterNameId,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$SessionCountersTableAnnotationComposer(
+              $db: $db,
+              $table: $db.sessionCounters,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return f(composer);
+  }
+}
+
+class $$CounterNamesTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $CounterNamesTable,
+    CounterName,
+    $$CounterNamesTableFilterComposer,
+    $$CounterNamesTableOrderingComposer,
+    $$CounterNamesTableAnnotationComposer,
+    $$CounterNamesTableCreateCompanionBuilder,
+    $$CounterNamesTableUpdateCompanionBuilder,
+    (CounterName, $$CounterNamesTableReferences),
+    CounterName,
+    PrefetchHooks Function({bool sessionCountersRefs})> {
+  $$CounterNamesTableTableManager(_$AppDatabase db, $CounterNamesTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$CounterNamesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$CounterNamesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$CounterNamesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> id = const Value.absent(),
+            Value<String> name = const Value.absent(),
+            Value<String?> species = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CounterNamesCompanion(
+            id: id,
+            name: name,
+            species: species,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String id,
+            required String name,
+            Value<String?> species = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              CounterNamesCompanion.insert(
+            id: id,
+            name: name,
+            species: species,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$CounterNamesTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({sessionCountersRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (sessionCountersRefs) db.sessionCounters
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (sessionCountersRefs)
+                    await $_getPrefetchedData(
+                        currentTable: table,
+                        referencedTable: $$CounterNamesTableReferences
+                            ._sessionCountersRefsTable(db),
+                        managerFromTypedResult: (p0) =>
+                            $$CounterNamesTableReferences(db, table, p0)
+                                .sessionCountersRefs,
+                        referencedItemsForCurrentItem:
+                            (item, referencedItems) => referencedItems
+                                .where((e) => e.counterNameId == item.id),
+                        typedResults: items)
+                ];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$CounterNamesTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $CounterNamesTable,
+    CounterName,
+    $$CounterNamesTableFilterComposer,
+    $$CounterNamesTableOrderingComposer,
+    $$CounterNamesTableAnnotationComposer,
+    $$CounterNamesTableCreateCompanionBuilder,
+    $$CounterNamesTableUpdateCompanionBuilder,
+    (CounterName, $$CounterNamesTableReferences),
+    CounterName,
+    PrefetchHooks Function({bool sessionCountersRefs})>;
+typedef $$SessionCountersTableCreateCompanionBuilder = SessionCountersCompanion
+    Function({
+  required String sessionId,
+  required int counterNumber,
+  required String counterNameId,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+typedef $$SessionCountersTableUpdateCompanionBuilder = SessionCountersCompanion
+    Function({
+  Value<String> sessionId,
+  Value<int> counterNumber,
+  Value<String> counterNameId,
+  Value<bool> synced,
+  Value<DateTime> createdAt,
+  Value<DateTime> updatedAt,
+  Value<DateTime?> deletedAt,
+  Value<int> rowid,
+});
+
+final class $$SessionCountersTableReferences extends BaseReferences<
+    _$AppDatabase, $SessionCountersTable, SessionCounter> {
+  $$SessionCountersTableReferences(
+      super.$_db, super.$_table, super.$_typedResult);
+
+  static $FishingSessionsTable _sessionIdTable(_$AppDatabase db) =>
+      db.fishingSessions.createAlias($_aliasNameGenerator(
+          db.sessionCounters.sessionId, db.fishingSessions.id));
+
+  $$FishingSessionsTableProcessedTableManager? get sessionId {
+    if ($_item.sessionId == null) return null;
+    final manager =
+        $$FishingSessionsTableTableManager($_db, $_db.fishingSessions)
+            .filter((f) => f.id($_item.sessionId!));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+
+  static $CounterNamesTable _counterNameIdTable(_$AppDatabase db) =>
+      db.counterNames.createAlias($_aliasNameGenerator(
+          db.sessionCounters.counterNameId, db.counterNames.id));
+
+  $$CounterNamesTableProcessedTableManager? get counterNameId {
+    if ($_item.counterNameId == null) return null;
+    final manager = $$CounterNamesTableTableManager($_db, $_db.counterNames)
+        .filter((f) => f.id($_item.counterNameId!));
+    final item = $_typedResult.readTableOrNull(_counterNameIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+        manager.$state.copyWith(prefetchedData: [item]));
+  }
+}
+
+class $$SessionCountersTableFilterComposer
+    extends Composer<_$AppDatabase, $SessionCountersTable> {
+  $$SessionCountersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get counterNumber => $composableBuilder(
+      column: $table.counterNumber, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnFilters(column));
+
+  $$FishingSessionsTableFilterComposer get sessionId {
+    final $$FishingSessionsTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableFilterComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CounterNamesTableFilterComposer get counterNameId {
+    final $$CounterNamesTableFilterComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.counterNameId,
+        referencedTable: $db.counterNames,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CounterNamesTableFilterComposer(
+              $db: $db,
+              $table: $db.counterNames,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionCountersTableOrderingComposer
+    extends Composer<_$AppDatabase, $SessionCountersTable> {
+  $$SessionCountersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get counterNumber => $composableBuilder(
+      column: $table.counterNumber,
+      builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<bool> get synced => $composableBuilder(
+      column: $table.synced, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get createdAt => $composableBuilder(
+      column: $table.createdAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
+      column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<DateTime> get deletedAt => $composableBuilder(
+      column: $table.deletedAt, builder: (column) => ColumnOrderings(column));
+
+  $$FishingSessionsTableOrderingComposer get sessionId {
+    final $$FishingSessionsTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableOrderingComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CounterNamesTableOrderingComposer get counterNameId {
+    final $$CounterNamesTableOrderingComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.counterNameId,
+        referencedTable: $db.counterNames,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CounterNamesTableOrderingComposer(
+              $db: $db,
+              $table: $db.counterNames,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionCountersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SessionCountersTable> {
+  $$SessionCountersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get counterNumber => $composableBuilder(
+      column: $table.counterNumber, builder: (column) => column);
+
+  GeneratedColumn<bool> get synced =>
+      $composableBuilder(column: $table.synced, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get createdAt =>
+      $composableBuilder(column: $table.createdAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get updatedAt =>
+      $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<DateTime> get deletedAt =>
+      $composableBuilder(column: $table.deletedAt, builder: (column) => column);
+
+  $$FishingSessionsTableAnnotationComposer get sessionId {
+    final $$FishingSessionsTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.sessionId,
+        referencedTable: $db.fishingSessions,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$FishingSessionsTableAnnotationComposer(
+              $db: $db,
+              $table: $db.fishingSessions,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+
+  $$CounterNamesTableAnnotationComposer get counterNameId {
+    final $$CounterNamesTableAnnotationComposer composer = $composerBuilder(
+        composer: this,
+        getCurrentColumn: (t) => t.counterNameId,
+        referencedTable: $db.counterNames,
+        getReferencedColumn: (t) => t.id,
+        builder: (joinBuilder,
+                {$addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer}) =>
+            $$CounterNamesTableAnnotationComposer(
+              $db: $db,
+              $table: $db.counterNames,
+              $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+              joinBuilder: joinBuilder,
+              $removeJoinBuilderFromRootComposer:
+                  $removeJoinBuilderFromRootComposer,
+            ));
+    return composer;
+  }
+}
+
+class $$SessionCountersTableTableManager extends RootTableManager<
+    _$AppDatabase,
+    $SessionCountersTable,
+    SessionCounter,
+    $$SessionCountersTableFilterComposer,
+    $$SessionCountersTableOrderingComposer,
+    $$SessionCountersTableAnnotationComposer,
+    $$SessionCountersTableCreateCompanionBuilder,
+    $$SessionCountersTableUpdateCompanionBuilder,
+    (SessionCounter, $$SessionCountersTableReferences),
+    SessionCounter,
+    PrefetchHooks Function({bool sessionId, bool counterNameId})> {
+  $$SessionCountersTableTableManager(
+      _$AppDatabase db, $SessionCountersTable table)
+      : super(TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionCountersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SessionCountersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SessionCountersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback: ({
+            Value<String> sessionId = const Value.absent(),
+            Value<int> counterNumber = const Value.absent(),
+            Value<String> counterNameId = const Value.absent(),
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionCountersCompanion(
+            sessionId: sessionId,
+            counterNumber: counterNumber,
+            counterNameId: counterNameId,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          createCompanionCallback: ({
+            required String sessionId,
+            required int counterNumber,
+            required String counterNameId,
+            Value<bool> synced = const Value.absent(),
+            Value<DateTime> createdAt = const Value.absent(),
+            Value<DateTime> updatedAt = const Value.absent(),
+            Value<DateTime?> deletedAt = const Value.absent(),
+            Value<int> rowid = const Value.absent(),
+          }) =>
+              SessionCountersCompanion.insert(
+            sessionId: sessionId,
+            counterNumber: counterNumber,
+            counterNameId: counterNameId,
+            synced: synced,
+            createdAt: createdAt,
+            updatedAt: updatedAt,
+            deletedAt: deletedAt,
+            rowid: rowid,
+          ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (
+                    e.readTable(table),
+                    $$SessionCountersTableReferences(db, table, e)
+                  ))
+              .toList(),
+          prefetchHooksCallback: ({sessionId = false, counterNameId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins: <
+                  T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic>>(state) {
+                if (sessionId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.sessionId,
+                    referencedTable:
+                        $$SessionCountersTableReferences._sessionIdTable(db),
+                    referencedColumn:
+                        $$SessionCountersTableReferences._sessionIdTable(db).id,
+                  ) as T;
+                }
+                if (counterNameId) {
+                  state = state.withJoin(
+                    currentTable: table,
+                    currentColumn: table.counterNameId,
+                    referencedTable: $$SessionCountersTableReferences
+                        ._counterNameIdTable(db),
+                    referencedColumn: $$SessionCountersTableReferences
+                        ._counterNameIdTable(db)
+                        .id,
+                  ) as T;
+                }
+
+                return state;
+              },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ));
+}
+
+typedef $$SessionCountersTableProcessedTableManager = ProcessedTableManager<
+    _$AppDatabase,
+    $SessionCountersTable,
+    SessionCounter,
+    $$SessionCountersTableFilterComposer,
+    $$SessionCountersTableOrderingComposer,
+    $$SessionCountersTableAnnotationComposer,
+    $$SessionCountersTableCreateCompanionBuilder,
+    $$SessionCountersTableUpdateCompanionBuilder,
+    (SessionCounter, $$SessionCountersTableReferences),
+    SessionCounter,
+    PrefetchHooks Function({bool sessionId, bool counterNameId})>;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -5292,4 +6845,8 @@ class $AppDatabaseManager {
       $$SessionLogTableTableManager(_db, _db.sessionLog);
   $$LiveCounterEntriesTableTableManager get liveCounterEntries =>
       $$LiveCounterEntriesTableTableManager(_db, _db.liveCounterEntries);
+  $$CounterNamesTableTableManager get counterNames =>
+      $$CounterNamesTableTableManager(_db, _db.counterNames);
+  $$SessionCountersTableTableManager get sessionCounters =>
+      $$SessionCountersTableTableManager(_db, _db.sessionCounters);
 }

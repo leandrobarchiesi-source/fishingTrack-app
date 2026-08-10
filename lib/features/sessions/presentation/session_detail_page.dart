@@ -7,6 +7,7 @@ import '../../../core/t.dart';
 import 'live_session_page.dart';
 import '../../../core/session_constants.dart';
 import 'session_log_page.dart';
+import 'edit_live_session_page.dart';
 
 
 class SessionDetailPage extends StatefulWidget {
@@ -42,11 +43,9 @@ void initState() {
 
 loadCatches();
 
-if (session.mode == SessionMode.standard) {
   WidgetsBinding.instance.addPostFrameCallback((_) {
     aggiornaMeteoSeNecessario();
   });
-}
 }
 
 Future<void> loadCatches() async {
@@ -513,10 +512,22 @@ SizedBox(
             child: ElevatedButton.icon(
               icon: const Icon(Icons.edit),
               label: Text(T.editSpotAndNotes),
-              onPressed: () {
-                // TODO
-              },
-            ),
+onPressed: () async {
+  final result = await Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => EditLiveSessionPage(
+        database: widget.database,
+        session: session,
+      ),
+    ),
+  );
+
+  if (result == true) {
+    await reloadSession();
+    await loadCatches();
+  }
+},            ),
           ),
 
           const SizedBox(height: 12),

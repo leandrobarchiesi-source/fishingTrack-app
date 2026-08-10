@@ -14,9 +14,8 @@ import 'tables/session_log.dart';
 import 'tables/live_counters.dart';
 import 'session_event_type.dart';
 import 'package:uuid/uuid.dart';
-
-
-
+import 'tables/counter_names.dart';
+import 'tables/session_counters.dart';
 
 part 'app_database.g.dart';
 
@@ -29,7 +28,9 @@ tables: [
   Profiles,
   SessionCatch,
   SessionLog,
-  LiveCounterEntries
+  LiveCounterEntries,
+  CounterNames,
+  SessionCounters
 ],)
 
 class AppDatabase extends _$AppDatabase {
@@ -39,7 +40,7 @@ class AppDatabase extends _$AppDatabase {
         );
 
   @override
-  int get schemaVersion => 14;
+  int get schemaVersion => 15;
 
   @override
   MigrationStrategy get migration => buildMigration(this);
@@ -293,7 +294,6 @@ Future<DateTime?> getLastCastTime(String sessionId) async {
         ..where((t) => t.sessionId.equals(sessionId) & t.deletedAt.isNull()))
       .get();
 
-  print("===== EVENTI SESSIONE =====");
 
   for (final e in all) {
     print(
@@ -339,6 +339,7 @@ Future<void> printSessionLog(String sessionId) async {
     );
   }
 }
+
 Future<void> endLiveSession(
   String sessionId,
 ) async {
@@ -390,7 +391,6 @@ Future<List<SessionLogData>> getSessionEvents(
 }
 
 Future<void> addEndEvent(String sessionId) async {
-    print(">>> END EVENT");
   await addSessionEvent(
     sessionId: sessionId,
     eventType: SessionEventType.end,
@@ -700,13 +700,6 @@ Future<void> syncFromSupabase() async {
             ))
           .getSingleOrNull();
 
-      print("========== SESSIONE ==========");
-      print("ID: ${item['id']}");
-      print("Cloud updated : ${item['updated_at']}");
-      print("Locale updated: ${locale?.updatedAt}");
-print("Cloud note   : ${item['note']}");
-print("Locale note  : ${locale?.note}");
-      print("=============================");
 
       if (locale != null) {
         final remoto = DateTime.parse(
@@ -715,17 +708,13 @@ print("Locale note  : ${locale?.note}");
 
         final localeTime = locale.updatedAt.toUtc();
 
-        print("Cloud UTC : $remoto");
-        print("Locale UTC: $localeTime");
 
         if (localeTime.millisecondsSinceEpoch >
             remoto.millisecondsSinceEpoch) {
-          print("SKIP DOWNLOAD - Locale più recente");
           continue;
         }
       }
 
-      print("DOWNLOAD DAL CLOUD");
 
       final cloudSession = FishingSessionsCompanion.insert(
         id: item['id'],
@@ -774,10 +763,6 @@ print("Locale note  : ${locale?.note}");
             ))
           .getSingleOrNull();
 
-      print("----- SQLITE DOPO INSERT -----");
-      print("Note       : ${verifica?.note}");
-      print("Updated_at : ${verifica?.updatedAt}");
-      print("------------------------------");
     }
   } catch (e) {
     print("Errore download sessioni: $e");
@@ -825,8 +810,6 @@ final remoto = DateTime.parse(
 
 final localeTime = locale.updatedAt.toUtc();
 
-print("Cloud UTC : $remoto");
-print("Locale UTC: $localeTime");
   // Il record locale è più recente:
   // non sovrascriverlo, verrà inviato al cloud.
   if (locale.updatedAt.isAfter(remoto)) {
@@ -903,7 +886,6 @@ Future<void> syncDeletedSpots() async {
 }
 
 Future<void> syncPendingSpots() async {
-  print(">>> syncPendingSpots()");
   try {
     final pending = await (select(
       spots,
@@ -914,13 +896,6 @@ Future<void> syncPendingSpots() async {
 
     for (final s in pending) {
       // Spot eliminato localmente
-print("========== SYNC SPOT ==========");
-print("Spot: ${s.nome}");
-print("userId SQLite : ${s.userId}");
-print("auth.uid()    : ${Supabase.instance.client.auth.currentUser?.id}");
-print("Spot ID: ${s.id}");
-print("Created: ${s.createdAt}");
-print("================================");
       // Inserimento / aggiornamento
       await Supabase.instance.client
           .from('spots')
@@ -1323,8 +1298,9 @@ Future<List<String>> getUsedSpecies() async {
       .toList();
 }
 
+
+
 Future<void> syncPendingSessionCatches() async {
-  print(">>> syncPendingSessionCatches()");
 
   try {
     final pending = await (select(sessionCatch)
@@ -1361,6 +1337,102 @@ Future<void> syncPendingSessionCatches() async {
     print(e);
     print(st);
   }
+}
+
+Future<void> saveCounterName(
+  CounterNamesCompanion counterName,
+) async {
+  await into(counterNames).insertOnConflictUpdate(
+    counterName.copyWith(
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<void> saveSessionCounter(
+  SessionCountersCompanion sessionCounter,
+) async {
+  await into(sessionCounters).insertOnConflictUpdate(
+    sessionCounter.copyWith(
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
+
+Future<String> getOrCreateCounterName(
+  String name,
+) async {
+  final existing = await (select(counterNames)
+        ..where((t) => t.name.equals(name)))
+      .getSingleOrNull();
+
+  if (existing != null) {
+    return existing.id;
+  }
+
+  final id = uuid.v4();
+
+  await saveCounterName(
+    CounterNamesCompanion.insert(
+      id: id,
+      name: name,
+    ),
+  );
+
+  return id;
+}
+
+Future<List<String>> getUsedCounterNames() async {
+  final result = await (select(counterNames)
+        ..where((t) => t.deletedAt.isNull())
+        ..orderBy([
+          (t) => OrderingTerm.asc(t.name),
+        ]))
+      .get();
+
+  return result.map((e) => e.name).toList();
+}
+
+Future<Map<int, String>> getSessionCounterNames(
+  String sessionId,
+) async {
+  final query = select(sessionCounters).join([
+    innerJoin(
+      counterNames,
+      counterNames.id.equalsExp(
+        sessionCounters.counterNameId,
+      ),
+    ),
+  ])
+    ..where(
+      sessionCounters.sessionId.equals(sessionId),
+    );
+
+  final rows = await query.get();
+
+  return {
+    for (final row in rows)
+      row.readTable(sessionCounters).counterNumber:
+          row.readTable(counterNames).name,
+  };
+}
+
+Future<int> getMaxCounterNumber(
+  String sessionId,
+) async {
+  final result = await (select(sessionLog)
+        ..where((t) =>
+            t.sessionId.equals(sessionId) &
+            t.counter.isNotNull())
+        ..orderBy([
+          (t) => OrderingTerm.desc(t.counter),
+        ])
+        ..limit(1))
+      .getSingleOrNull();
+
+  return result?.counter ?? 0;
 }
 
 Future<void> saveSessionLog(
