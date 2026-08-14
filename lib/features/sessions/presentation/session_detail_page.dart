@@ -9,9 +9,8 @@ import '../../../core/session_constants.dart';
 import 'session_log_page.dart';
 import 'edit_live_session_page.dart';
 
-
 class SessionDetailPage extends StatefulWidget {
-    final FishingSession session;
+  final FishingSession session;
 
   final AppDatabase database;
 
@@ -22,80 +21,81 @@ class SessionDetailPage extends StatefulWidget {
   });
 
   @override
-State<SessionDetailPage> createState() =>
-    _SessionDetailPageState();
+  State<SessionDetailPage> createState() => _SessionDetailPageState();
 }
 
-class _SessionDetailPageState
-    extends State<SessionDetailPage> {
+class _SessionDetailPageState extends State<SessionDetailPage> {
+  late FishingSession session;
+  List<SessionCatchData> catches = [];
 
-      late FishingSession session;
-      List<SessionCatchData> catches = [];
+  @override
+  void initState() {
+    super.initState();
 
-@override
-void initState() {
-  super.initState();
+    session = widget.session;
 
-
-
-  session = widget.session;
-  reloadSession();
-
-loadCatches();
-
-  WidgetsBinding.instance.addPostFrameCallback((_) {
-    aggiornaMeteoSeNecessario();
-  });
-}
-
-Future<void> loadCatches() async {
-  catches = await widget.database.getSessionCatches(
-    session.id,
-  );
-
-  if (mounted) {
-    setState(() {});
-  }
-}
-
-Future<void> reloadSession() async {
-  final s = await widget.database.getSessionById(widget.session.id);
-   debugPrint("RELOAD STATUS = ${s?.status}");
-
-  if (!mounted || s == null) return;
-
-  setState(() {
-    session = s;
-  });
-}
-
-Future<void> aggiornaMeteoSeNecessario() async {
-  print("Controllo meteo per sessione ${session.id}");
-
-  final aggiornato =
-      await widget.database.completaMeteoSessione(session.id);
-
-  print("Meteo aggiornato? $aggiornato");
-
-  if (!mounted || !aggiornato) {
-    return;
+    _initPage();
   }
 
-  final nuova =
-      await widget.database.getSessionById(session.id);
+  Future<void> _initPage() async {
+    await reloadSession();
+    await loadCatches();
 
-  if (nuova != null) {
+    if (!mounted) return;
+
+    if (session.mode == SessionMode.live &&
+        session.status == SessionStatus.completed) {
+      await aggiornaMeteoSeNecessario();
+    }
+  }
+
+  Future<void> loadCatches() async {
+    catches = await widget.database.getSessionCatches(
+      session.id,
+    );
+
+    if (mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> reloadSession() async {
+    final s = await widget.database.getSessionById(widget.session.id);
+    debugPrint("RELOAD STATUS = ${s?.status}");
+
+    if (!mounted || s == null) return;
+
     setState(() {
-      session = nuova;
+      session = s;
     });
   }
 
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(T.weatherUpdated),
-    ),
-  );
-}
+  Future<void> aggiornaMeteoSeNecessario() async {
+    print("Controllo meteo per sessione ${session.id}");
+
+    final aggiornato = await widget.database.completaMeteoSessione(session.id);
+
+    print("Meteo aggiornato? $aggiornato");
+
+    if (!mounted || !aggiornato) {
+      return;
+    }
+
+    final nuova = await widget.database.getSessionById(session.id);
+
+    if (nuova != null) {
+      setState(() {
+        session = nuova;
+      });
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(T.weatherUpdated),
+      ),
+    );
+  }
+
   String formatDate(DateTime d) {
     return "${d.day.toString().padLeft(2, '0')}/"
         "${d.month.toString().padLeft(2, '0')}/"
@@ -123,33 +123,33 @@ Future<void> aggiornaMeteoSeNecessario() async {
     );
   }
 
-Future<void> eliminaSessione() async {
-  final conferma = await showDialog<bool>(
-    context: context,
-    builder: (_) => AlertDialog(
-      title: Text(T.deleteSession),
-      content: Text(T.deleteSessionQuestion),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context, false),
-          child: Text(T.cancel),
-        ),
-        ElevatedButton(
-          onPressed: () => Navigator.pop(context, true),
-          child: Text(T.delete),
-        ),
-      ],
-    ),
-  );
+  Future<void> eliminaSessione() async {
+    final conferma = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: Text(T.deleteSession),
+        content: Text(T.deleteSessionQuestion),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(T.cancel),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(T.delete),
+          ),
+        ],
+      ),
+    );
 
-  if (conferma != true) return;
+    if (conferma != true) return;
 
-  await widget.database.deleteSession(session.id);
+    await widget.database.deleteSession(session.id);
 
-  if (mounted) {
-    Navigator.pop(context, true);
+    if (mounted) {
+      Navigator.pop(context, true);
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
@@ -162,13 +162,13 @@ Future<void> eliminaSessione() async {
     final minuti = durata.inMinutes % 60;
 
     final isSummary = session.mode == SessionMode.standard;
-final isLive = session.mode == SessionMode.live;
+    final isLive = session.mode == SessionMode.live;
 
-final isPlanned = session.status == SessionStatus.planned;
-final isRunning = session.status == SessionStatus.running;
-final isCompleted = session.status == SessionStatus.completed;
+    final isPlanned = session.status == SessionStatus.planned;
+    final isRunning = session.status == SessionStatus.running;
+    final isCompleted = session.status == SessionStatus.completed;
 
-final showSummaryData = isSummary || isCompleted;
+    final showSummaryData = isSummary || isCompleted;
 
     return Scaffold(
       appBar: AppBar(
@@ -181,7 +181,7 @@ final showSummaryData = isSummary || isCompleted;
         children: [
           Card(
             child: Padding(
-padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -195,34 +195,32 @@ padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                   const SizedBox(
                     height: 12,
                   ),
-Text(
-  "🎣 ${T.sessionType(session.tipoPescata)}",
-),
-
-if (showSummaryData) ...[
-  const SizedBox(
-    height: 10,
-  ),
-  Text(
-    "📅 ${formatDate(session.data)}",
-  ),
-  const SizedBox(
-    height: 10,
-  ),
-  Text(
-    "🕒 ${formatTime(session.oraInizio)} → ${formatTime(session.oraFine)}",
-  ),
-  const SizedBox(
-    height: 10,
-  ),
-  Text(
-    "${T.duration}: ${ore}h ${minuti}m",
-  ),
-],
-
-const SizedBox(
-  height: 12,
-),
+                  Text(
+                    "🎣 ${T.sessionType(session.tipoPescata)}",
+                  ),
+                  if (showSummaryData) ...[
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      "📅 ${formatDate(session.data)}",
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      "🕒 ${formatTime(session.oraInizio)} → ${formatTime(session.oraFine)}",
+                    ),
+                    const SizedBox(
+                      height: 10,
+                    ),
+                    Text(
+                      "${T.duration}: ${ore}h ${minuti}m",
+                    ),
+                  ],
+                  const SizedBox(
+                    height: 12,
+                  ),
                   if (session.latitudine != null)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,105 +253,96 @@ const SizedBox(
                         const SizedBox(
                           height: 20,
                         ),
-
-                        if (showSummaryData)...[
-                        Text(
-                          "🌤 ${T.weather}",
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(
-                          height: 8,
-                        ),
-                        Text(
-                          session.temperaturaAcqua != null
-                              ? "💧 ${session.temperaturaAcqua!.toStringAsFixed(1)}°C"
-                              : "💧 -",
-                        ),
-                        if (session.temperatura != null)
+                        if (showSummaryData) ...[
                           Text(
-                            "🌡 ${session.temperatura}°C",
-                          ),
-                        if (session.vento != null)
-                          Text(
-                            "💨 ${session.vento}",
-                          ),
-                        if (session.pressione != null)
-                          Text(
-                            "📈 ${session.pressione} hPa",
-                          ),
-                        if (session.condizioni != null)
-                          Text(
-                            "☁ ${T.weatherCondition(session.condizioni!)}",
-                          ),
-                        if (session.faseLunare != null)
-                          Text(
-                            T.moonPhase(
-                              session.faseLunare!,
+                            "🌤 ${T.weather}",
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-    ],
+                          const SizedBox(
+                            height: 8,
+                          ),
+                          Text(
+                            session.temperaturaAcqua != null
+                                ? "💧 ${session.temperaturaAcqua!.toStringAsFixed(1)}°C"
+                                : "💧 -",
+                          ),
+                          if (session.temperatura != null)
+                            Text(
+                              "🌡 ${session.temperatura}°C",
+                            ),
+                          if (session.vento != null)
+                            Text(
+                              "💨 ${session.vento}",
+                            ),
+                          if (session.pressione != null)
+                            Text(
+                              "📈 ${session.pressione} hPa",
+                            ),
+                          if (session.condizioni != null)
+                            Text(
+                              "☁ ${T.weatherCondition(session.condizioni!)}",
+                            ),
+                          if (session.faseLunare != null)
+                            Text(
+                              T.moonPhase(
+                                session.faseLunare!,
+                              ),
+                            ),
+                        ],
                       ],
                     ),
                   const SizedBox(
                     height: 8,
                   ),
-
-if (catches.isNotEmpty)
-  Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      const SizedBox(height: 10),
-
-      Text(
-        "🎣 ${T.catches}",
-        style: const TextStyle(
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-
-      const SizedBox(height: 8),
-
-      Container(
-        decoration: BoxDecoration(
-          border: Border.all(
-            color: Colors.grey.shade300,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Column(
-            children: catches.map((c) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(c.species),
+                  if (catches.isNotEmpty)
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 10),
+                        Text(
+                          "🎣 ${T.catches}",
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
+                              color: Colors.grey.shade300,
+                            ),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(12),
+                            child: Column(
+                              children: catches.map((c) {
+                                return Padding(
+                                  padding:
+                                      const EdgeInsets.symmetric(vertical: 4),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: Text(c.species),
+                                      ),
+                                      Text(
+                                        c.quantity.toString(),
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                      ],
                     ),
-                    Text(
-                      c.quantity.toString(),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-
-
-
-            }).toList(),
-          ),
-        ),
-      ),
-
-      const SizedBox(height: 8),
-    ],
-  ),
-
                   if (session.note != null && session.note!.isNotEmpty)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -379,211 +368,200 @@ if (catches.isNotEmpty)
             ),
           ),
           const SizedBox(height: 12),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // ===== LIVE PLANNED =====
 
-Card(
-  child: Padding(
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
+                  if (isLive && isPlanned) ...[
+                    SizedBox(
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.play_arrow),
+                        label: Text(T.startSession),
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LiveSessionPage(
+                                database: widget.database,
+                                session: session,
+                              ),
+                            ),
+                          );
 
-        // ===== LIVE PLANNED =====
-
-        if (isLive && isPlanned) ...[
-          SizedBox(
-            height: 55,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.play_arrow),
-              label: Text(T.startSession),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LiveSessionPage(
-                      database: widget.database,
-                      session: session,
+                          await reloadSession();
+                        },
+                      ),
                     ),
-                  ),
-                );
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.edit),
+                        label: Text(T.editSession),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NewSessionPage(
+                                database: widget.database,
+                                session: session,
+                              ),
+                            ),
+                          );
 
-                await reloadSession();
-              },
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            height: 55,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.edit),
-              label: Text(T.editSession),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => NewSessionPage(
-                      database: widget.database,
-                      session: session,
+                          if (context.mounted && result == true) {
+                            Navigator.pop(context, true);
+                          }
+                        },
+                      ),
                     ),
-                  ),
-                );
-
-                if (context.mounted && result == true) {
-                  Navigator.pop(context, true);
-                }
-              },
-            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            height: 55,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.delete),
-              label: Text(T.deleteSession),
-              onPressed: eliminaSessione,
-            ),
-          ),
-        ],
-
-        // ===== LIVE RUNNING =====
-
-        if (isLive && isRunning) ...[
-          SizedBox(
-            height: 55,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.play_circle_fill),
-              label: Text(T.resumeSession),
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => LiveSessionPage(
-                      database: widget.database,
-                      session: session,
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 55,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.delete),
+                        label: Text(T.deleteSession),
+                        onPressed: eliminaSessione,
+                      ),
                     ),
-                  ),
-                );
+                  ],
 
-                await reloadSession();
-              },
-            ),
-          ),
+                  // ===== LIVE RUNNING =====
 
-          const SizedBox(height: 12),
+                  if (isLive && isRunning) ...[
+                    SizedBox(
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.play_circle_fill),
+                        label: Text(T.resumeSession),
+                        onPressed: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => LiveSessionPage(
+                                database: widget.database,
+                                session: session,
+                              ),
+                            ),
+                          );
 
-          SizedBox(
-            height: 55,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.delete),
-              label: Text(T.deleteSession),
-              onPressed: eliminaSessione,
-            ),
-          ),
-        ],
-
-        // ===== LIVE COMPLETED =====
-
-        if (isLive && isCompleted) ...[
-SizedBox(
-  height: 55,
-  child: ElevatedButton.icon(
-    icon: const Icon(Icons.history),
-    label: Text(T.viewLog),
-    onPressed: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => SessionLogPage(
-            database: widget.database,
-            session: session,
-          ),
-        ),
-      );
-    },
-  ),
-),
-          const SizedBox(height: 12),
-
-          SizedBox(
-            height: 55,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.edit),
-              label: Text(T.editSpotAndNotes),
-onPressed: () async {
-  final result = await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => EditLiveSessionPage(
-        database: widget.database,
-        session: session,
-      ),
-    ),
-  );
-
-  if (result == true) {
-    await reloadSession();
-    await loadCatches();
-  }
-},            ),
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            height: 55,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.delete),
-              label: Text(T.deleteSession),
-              onPressed: eliminaSessione,
-            ),
-          ),
-        ],
-
-        // ===== SESSIONE STANDARD =====
-
-        if (isSummary) ...[
-          SizedBox(
-            height: 55,
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.edit),
-              label: Text(T.editSession),
-              onPressed: () async {
-                final result = await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => NewSessionPage(
-                      database: widget.database,
-                      session: session,
+                          await reloadSession();
+                        },
+                      ),
                     ),
-                  ),
-                );
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 55,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.delete),
+                        label: Text(T.deleteSession),
+                        onPressed: eliminaSessione,
+                      ),
+                    ),
+                  ],
 
-                if (context.mounted && result == true) {
-                  Navigator.pop(context, true);
-                }
-              },
+                  // ===== LIVE COMPLETED =====
+
+                  if (isLive && isCompleted) ...[
+                    SizedBox(
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.history),
+                        label: Text(T.viewLog),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => SessionLogPage(
+                                database: widget.database,
+                                session: session,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.edit),
+                        label: Text(T.editSpotAndNotes),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => EditLiveSessionPage(
+                                database: widget.database,
+                                session: session,
+                              ),
+                            ),
+                          );
+
+                          if (result == true) {
+                            await reloadSession();
+                            await loadCatches();
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 55,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.delete),
+                        label: Text(T.deleteSession),
+                        onPressed: eliminaSessione,
+                      ),
+                    ),
+                  ],
+
+                  // ===== SESSIONE STANDARD =====
+
+                  if (isSummary) ...[
+                    SizedBox(
+                      height: 55,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.edit),
+                        label: Text(T.editSession),
+                        onPressed: () async {
+                          final result = await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => NewSessionPage(
+                                database: widget.database,
+                                session: session,
+                              ),
+                            ),
+                          );
+
+                          if (context.mounted && result == true) {
+                            Navigator.pop(context, true);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SizedBox(
+                      height: 55,
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.delete),
+                        label: Text(T.deleteSession),
+                        onPressed: eliminaSessione,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
-          ),
-
-          const SizedBox(height: 12),
-
-          SizedBox(
-            height: 55,
-            child: OutlinedButton.icon(
-              icon: const Icon(Icons.delete),
-              label: Text(T.deleteSession),
-              onPressed: eliminaSessione,
-            ),
-          ),
+          )
         ],
-      ],
-    ),
-  ),
-)  ],
       ),
     );
-      }
+  }
 }
