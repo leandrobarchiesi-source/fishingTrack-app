@@ -10,6 +10,8 @@ class LocationSection extends StatelessWidget {
   final String? gpsSpotName;
   final double? gpsSpotDistance;
 
+  final bool online;
+
   final VoidCallback onCurrentLocation;
   final Future<void> Function() onSelectLocation;
 
@@ -20,6 +22,7 @@ class LocationSection extends StatelessWidget {
     required this.gpsSearching,
     required this.gpsSpotName,
     required this.gpsSpotDistance,
+    required this.online,
     required this.onCurrentLocation,
     required this.onSelectLocation,
   });
@@ -34,7 +37,6 @@ class LocationSection extends StatelessWidget {
             labelText: T.location,
           ),
         ),
-
         if (gpsAccuracy != null || gpsSearching)
           Card(
             margin: const EdgeInsets.only(top: 16, bottom: 12),
@@ -50,9 +52,7 @@ class LocationSection extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 8),
-
                   if (gpsSearching)
                     Row(
                       children: [
@@ -67,14 +67,12 @@ class LocationSection extends StatelessWidget {
                         Text(T.searchingPosition),
                       ],
                     ),
-
                   if (gpsAccuracy != null) ...[
                     const SizedBox(height: 8),
                     Text(
                       T.accuracy(gpsAccuracy!),
                     ),
                   ],
-
                   if (gpsSpotName != null) ...[
                     const SizedBox(height: 8),
                     Text(
@@ -84,12 +82,10 @@ class LocationSection extends StatelessWidget {
                       ),
                     ),
                   ],
-
                   if (gpsSpotDistance != null)
                     Text(
                       T.distance(gpsSpotDistance!),
                     ),
-
                   if (!gpsSearching &&
                       gpsAccuracy != null &&
                       gpsSpotName == null)
@@ -103,21 +99,21 @@ class LocationSection extends StatelessWidget {
               ),
             ),
           ),
-
         const SizedBox(height: 16),
-
         ElevatedButton.icon(
           onPressed: onCurrentLocation,
           icon: const Icon(Icons.location_on),
           label: Text(T.useCurrentLocation),
         ),
-
         const SizedBox(height: 10),
-
         ElevatedButton.icon(
           onPressed: () => onSelectLocation(),
-          icon: const Icon(Icons.map),
-          label: Text(T.selectFromMap),
+          icon: Icon(
+            online ? Icons.map : Icons.list,
+          ),
+          label: Text(
+            online ? T.selectFromMap : T.selectFromList,
+          ),
         ),
       ],
     );

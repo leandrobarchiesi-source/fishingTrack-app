@@ -383,7 +383,7 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
                         icon: const Icon(Icons.play_arrow),
                         label: Text(T.startSession),
                         onPressed: () async {
-                          await Navigator.push(
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (_) => LiveSessionPage(
@@ -394,6 +394,10 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
                           );
 
                           await reloadSession();
+
+                          if (result == true && mounted) {
+                            Navigator.pop(context, true);
+                          }
                         },
                       ),
                     ),
@@ -440,7 +444,7 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
                         icon: const Icon(Icons.play_circle_fill),
                         label: Text(T.resumeSession),
                         onPressed: () async {
-                          await Navigator.push(
+                          final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
                               builder: (_) => LiveSessionPage(
@@ -451,6 +455,10 @@ class _SessionDetailPageState extends State<SessionDetailPage> {
                           );
 
                           await reloadSession();
+
+                          if (result == true && mounted) {
+                            Navigator.pop(context, true);
+                          }
                         },
                       ),
                     ),

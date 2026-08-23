@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 
 import '../../../database/app_database.dart';
 import '../../../core/t.dart';
@@ -23,23 +24,40 @@ class LiveSessionPage extends StatefulWidget {
 
 class _LiveSessionPageState extends State<LiveSessionPage> {
   bool sessionStarted = false;
+
   final List<LiveCounter> counters = [
     LiveCounter(counter: 1),
   ];
 
   int casts = 0;
-  int get totalFish => counters.fold(0, (sum, c) => sum + c.quantity);
 
-  Duration lastCastTime = Duration.zero; // timer grande
-  Duration lastCatchTime = Duration.zero; // Last catch
-  Duration recoveryTime = Duration.zero; // Recovery
-  Duration sessionTime = Duration.zero; // Durata sessione
+  // Ultimi 10 lanci CONCLUSI.
+  //
+  // true  = cattura
+  // false = nessuna cattura
+  //
+  // Il lancio attualmente in corso non viene inserito.
+  final List<bool> castResults = [];
+
+  Duration lastCastTime = Duration.zero;
+  Duration lastCatchTime = Duration.zero;
+  Duration recoveryTime = Duration.zero;
+  Duration sessionTime = Duration.zero;
+
+  DateTime? lastCatchAt;
 
   Timer? timer;
+
+  int get totalFish => counters.fold(
+        0,
+        (sum, c) => sum + c.quantity,
+      );
 
   @override
   void initState() {
     super.initState();
+
+    WakelockPlus.enable();
 
     if (widget.session.status == "running") {
       sessionStarted = true;
@@ -47,6 +65,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
       sessionTime = DateTime.now().difference(
         widget.session.oraInizio,
       );
+
       loadLiveData();
     }
 
@@ -58,7 +77,13 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
         setState(() {
           sessionTime += const Duration(seconds: 1);
           lastCastTime += const Duration(seconds: 1);
-          lastCatchTime += const Duration(seconds: 1);
+
+          if (lastCatchAt != null) {
+            lastCatchTime = DateTime.now().difference(
+              lastCatchAt!,
+            );
+          }
+
           recoveryTime += const Duration(seconds: 1);
         });
       },
@@ -68,6 +93,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
   @override
   void dispose() {
     timer?.cancel();
+    WakelockPlus.disable();
     super.dispose();
   }
 
@@ -78,6 +104,10 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
     return "$h:$m:$s";
   }
+
+  // ------------------------------------------------------------
+  // START SESSIONE
+  // ------------------------------------------------------------
 
   Future<void> startSession() async {
     await widget.database.startLiveSession(
@@ -101,17 +131,33 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
       sessionTime = Duration.zero;
 
       casts = 1;
+
+      castResults.clear();
     });
   }
 
+  // ------------------------------------------------------------
+  // CARICAMENTO SESSIONE
+  // ------------------------------------------------------------
+
   Future<void> loadLiveData() async {
-    final castCount = await widget.database.getCastCount(widget.session.id);
-    final catchCounters =
-        await widget.database.getCatchCounters(widget.session.id);
+    final castCount = await widget.database.getCastCount(
+      widget.session.id,
+    );
 
-    final lastCast = await widget.database.getLastCastTime(widget.session.id);
+    final catchCounters = await widget.database.getCatchCounters(
+      widget.session.id,
+    );
 
-    final lastCatch = await widget.database.getLastCatchTime(widget.session.id);
+    final lastCast = await widget.database.getLastCastTime(
+      widget.session.id,
+    );
+
+    final lastCatch = await widget.database.getLastCatchTime(
+      widget.session.id,
+    );
+
+    await loadCastResults();
 
     if (!mounted) return;
 
@@ -137,8 +183,84 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
           ? Duration.zero
           : DateTime.now().difference(lastCatch);
     });
-    ;
   }
+
+  // ------------------------------------------------------------
+  // CALCOLO DEI 10 CERCHI
+  // ------------------------------------------------------------
+  //
+  // Esempio:
+  //
+  // CAST
+  // CATCH
+  // CAST
+  //
+  // => primo cerchio VERDE
+  //
+  // CAST
+  // CAST
+  //
+  // => secondo cerchio ROSSO
+  //
+  // L'ultimo CAST non viene mai visualizzato.
+  //
+  // ------------------------------------------------------------
+
+  Future<void> loadCastResults() async {
+    final events = await widget.database.getSessionEvents(
+      widget.session.id,
+    );
+
+    final results = <bool>[];
+
+    bool hasCurrentCast = false;
+    bool catchFromCurrentCast = false;
+
+    for (final event in events) {
+      // START = primo lancio
+      if (event.eventType == SessionEventType.start) {
+        hasCurrentCast = true;
+        catchFromCurrentCast = false;
+        continue;
+      }
+
+      // Un nuovo CAST chiude il lancio precedente
+      if (event.eventType == SessionEventType.cast) {
+        if (hasCurrentCast) {
+          results.add(catchFromCurrentCast);
+        }
+
+        // Il nuovo lancio diventa quello attualmente in corso
+        hasCurrentCast = true;
+        catchFromCurrentCast = false;
+        continue;
+      }
+
+      // Una cattura appartiene al lancio attualmente in corso
+      if (event.eventType == SessionEventType.catchFish) {
+        if (hasCurrentCast) {
+          catchFromCurrentCast = true;
+        }
+      }
+    }
+
+    // L'ultimo lancio NON viene aggiunto:
+    // è ancora quello in corso.
+
+    final visibleResults =
+        results.length <= 10 ? results : results.sublist(results.length - 10);
+
+    if (!mounted) return;
+
+    setState(() {
+      castResults
+        ..clear()
+        ..addAll(visibleResults);
+    });
+  }
+  // ------------------------------------------------------------
+  // CAST
+  // ------------------------------------------------------------
 
   Future<void> cast() async {
     if (!sessionStarted) return;
@@ -151,12 +273,21 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
       widget.session.id,
     );
 
+    // Aggiorniamo i cerchi leggendo il log.
+    await loadCastResults();
+
+    if (!mounted) return;
+
     setState(() {
       lastCastTime = Duration.zero;
       recoveryTime = Duration.zero;
       casts++;
     });
   }
+
+  // ------------------------------------------------------------
+  // FINE SESSIONE
+  // ------------------------------------------------------------
 
   Future<void> endSession() async {
     await widget.database.addEndEvent(
@@ -173,13 +304,14 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
     if (!mounted) return;
 
-    // qui inseriremo il popup
-
-// TODO: dialog temperatura acqua
+    // TODO: dialog temperatura acqua
 
     Navigator.pop(context, true);
   }
-// qui apriremo il dialog per inserire la temperatura}
+
+  // ------------------------------------------------------------
+  // UI
+  // ------------------------------------------------------------
 
   @override
   Widget build(BuildContext context) {
@@ -193,7 +325,10 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
           ),
           child: Column(
             children: [
+              // ------------------------------------------------
               // HEADER
+              // ------------------------------------------------
+
               Row(
                 children: [
                   Expanded(
@@ -228,7 +363,10 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
               const SizedBox(height: 18),
 
+              // ------------------------------------------------
               // TEMPO ULTIMA CATTURA
+              // ------------------------------------------------
+
               Text(
                 format(lastCastTime),
                 style: const TextStyle(
@@ -242,7 +380,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
               Text(
                 "${T.lastCatch} ${format(lastCatchTime)}",
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white70,
                   fontSize: 18,
                 ),
@@ -253,7 +391,10 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
               Text(
                 recoveryTime == Duration.zero
                     ? T.off
-                    : "${T.recovery}: ${recoveryTime.inMinutes}:${(recoveryTime.inSeconds % 60).toString().padLeft(2, '0')} / ${recoveryTime.inMinutes}:00",
+                    : "${T.recovery}: "
+                        "${recoveryTime.inMinutes}:"
+                        "${(recoveryTime.inSeconds % 60).toString().padLeft(2, '0')} / "
+                        "${recoveryTime.inMinutes}:00",
                 style: const TextStyle(
                   color: Colors.white54,
                   fontSize: 15,
@@ -269,11 +410,14 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
               const SizedBox(height: 18),
 
+              // ------------------------------------------------
               // START / CAST
+              // ------------------------------------------------
+
               GestureDetector(
                 onTap: () async {
                   if (sessionStarted) {
-                    cast();
+                    await cast();
                   } else {
                     await startSession();
                   }
@@ -302,6 +446,45 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                   ),
                 ),
               ),
+
+              // ------------------------------------------------
+              // SEQUENZA 10 LANCI
+              // ------------------------------------------------
+
+              const SizedBox(height: 12),
+
+              SizedBox(
+                height: 24,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: List.generate(
+                    10,
+                    (index) {
+                      final hasResult = index < castResults.length;
+
+                      return Container(
+                        width: 17,
+                        height: 17,
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 3,
+                        ),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: hasResult
+                              ? (castResults[index] ? Colors.green : Colors.red)
+                              : Colors.white12,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              // ------------------------------------------------
+              // CATTURE
+              // ------------------------------------------------
 
               Row(
                 children: [
@@ -339,7 +522,13 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 ],
               ),
 
-              const Divider(color: Colors.white24),
+              const Divider(
+                color: Colors.white24,
+              ),
+
+              // ------------------------------------------------
+              // CONTATORI
+              // ------------------------------------------------
 
               ...counters.map(
                 (c) => buildCounterRow(
@@ -363,17 +552,27 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                     final elimina = await showDialog<bool>(
                           context: context,
                           builder: (_) => AlertDialog(
-                            title: Text(T.deleteCounter),
+                            title: Text(
+                              T.deleteCounter,
+                            ),
                             content: Text(
-                              T.deleteCounterQuestion(c.counter),
+                              T.deleteCounterQuestion(
+                                c.counter,
+                              ),
                             ),
                             actions: [
                               TextButton(
-                                onPressed: () => Navigator.pop(context, false),
+                                onPressed: () => Navigator.pop(
+                                  context,
+                                  false,
+                                ),
                                 child: Text(T.cancel),
                               ),
                               FilledButton(
-                                onPressed: () => Navigator.pop(context, true),
+                                onPressed: () => Navigator.pop(
+                                  context,
+                                  true,
+                                ),
                                 child: Text(T.delete),
                               ),
                             ],
@@ -401,8 +600,14 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                       widget.session.id,
                     );
 
+                    await loadCastResults();
+
+                    if (!mounted) return;
+
                     setState(() {
                       c.quantity++;
+
+                      lastCatchAt = DateTime.now();
                       lastCatchTime = Duration.zero;
                     });
                   },
@@ -411,11 +616,15 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
               const Spacer(),
 
+              // ------------------------------------------------
+              // DURATA
+              // ------------------------------------------------
+
               const SizedBox(height: 4),
 
               Text(
                 T.duration,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white54,
                 ),
               ),
@@ -440,13 +649,17 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
               const SizedBox(height: 8),
 
+              // ------------------------------------------------
+              // FINE SESSIONE
+              // ------------------------------------------------
+
               TextButton(
                 onPressed: () async {
                   await endSession();
                 },
                 child: Text(
                   T.endSession,
-                  style: TextStyle(
+                  style: const TextStyle(
                     color: Colors.red,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -459,6 +672,10 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
       ),
     );
   }
+
+  // ------------------------------------------------------------
+  // RIGA CONTATORE
+  // ------------------------------------------------------------
 
   Widget buildCounterRow({
     required int counterNumber,

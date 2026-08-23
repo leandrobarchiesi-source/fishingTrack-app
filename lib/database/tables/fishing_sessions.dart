@@ -36,17 +36,25 @@ class FishingSessions extends Table {
 
   TextColumn get faseLunare => text().nullable()();
 
-  BoolColumn get synced => boolean().withDefault(const Constant(false),)();
+  BoolColumn get synced => boolean().withDefault(
+        const Constant(false),
+      )();
 
   DateTimeColumn get deletedAt => dateTime().nullable()();
 
-  TextColumn get mode => text().withDefault(const Constant("standard"),)();
+  TextColumn get mode => text().withDefault(
+        const Constant("standard"),
+      )();
 
-  TextColumn get status => text().withDefault(const Constant("completed"),)();
+  TextColumn get status => text().withDefault(
+        const Constant("completed"),
+      )();
 
   DateTimeColumn get createdAt => dateTime()();
 
   DateTimeColumn get updatedAt => dateTime()();
+
+  TextColumn get modalita => text().withDefault(const Constant('standard'))();
 
   @override
   Set<Column> get primaryKey => {id};

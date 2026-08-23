@@ -145,6 +145,14 @@ class $FishingSessionsTable extends FishingSessions
   late final GeneratedColumn<DateTime> updatedAt = GeneratedColumn<DateTime>(
       'updated_at', aliasedName, false,
       type: DriftSqlType.dateTime, requiredDuringInsert: true);
+  static const VerificationMeta _modalitaMeta =
+      const VerificationMeta('modalita');
+  @override
+  late final GeneratedColumn<String> modalita = GeneratedColumn<String>(
+      'modalita', aliasedName, false,
+      type: DriftSqlType.string,
+      requiredDuringInsert: false,
+      defaultValue: const Constant('standard'));
   @override
   List<GeneratedColumn> get $columns => [
         id,
@@ -169,7 +177,8 @@ class $FishingSessionsTable extends FishingSessions
         mode,
         status,
         createdAt,
-        updatedAt
+        updatedAt,
+        modalita
       ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -304,6 +313,10 @@ class $FishingSessionsTable extends FishingSessions
     } else if (isInserting) {
       context.missing(_updatedAtMeta);
     }
+    if (data.containsKey('modalita')) {
+      context.handle(_modalitaMeta,
+          modalita.isAcceptableOrUnknown(data['modalita']!, _modalitaMeta));
+    }
     return context;
   }
 
@@ -359,6 +372,8 @@ class $FishingSessionsTable extends FishingSessions
           .read(DriftSqlType.dateTime, data['${effectivePrefix}created_at'])!,
       updatedAt: attachedDatabase.typeMapping
           .read(DriftSqlType.dateTime, data['${effectivePrefix}updated_at'])!,
+      modalita: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}modalita'])!,
     );
   }
 
@@ -392,6 +407,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
   final String status;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final String modalita;
   const FishingSession(
       {required this.id,
       required this.userId,
@@ -415,7 +431,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       required this.mode,
       required this.status,
       required this.createdAt,
-      required this.updatedAt});
+      required this.updatedAt,
+      required this.modalita});
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
@@ -464,6 +481,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
     map['status'] = Variable<String>(status);
     map['created_at'] = Variable<DateTime>(createdAt);
     map['updated_at'] = Variable<DateTime>(updatedAt);
+    map['modalita'] = Variable<String>(modalita);
     return map;
   }
 
@@ -510,6 +528,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       status: Value(status),
       createdAt: Value(createdAt),
       updatedAt: Value(updatedAt),
+      modalita: Value(modalita),
     );
   }
 
@@ -540,6 +559,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       status: serializer.fromJson<String>(json['status']),
       createdAt: serializer.fromJson<DateTime>(json['createdAt']),
       updatedAt: serializer.fromJson<DateTime>(json['updatedAt']),
+      modalita: serializer.fromJson<String>(json['modalita']),
     );
   }
   @override
@@ -569,6 +589,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       'status': serializer.toJson<String>(status),
       'createdAt': serializer.toJson<DateTime>(createdAt),
       'updatedAt': serializer.toJson<DateTime>(updatedAt),
+      'modalita': serializer.toJson<String>(modalita),
     };
   }
 
@@ -595,7 +616,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           String? mode,
           String? status,
           DateTime? createdAt,
-          DateTime? updatedAt}) =>
+          DateTime? updatedAt,
+          String? modalita}) =>
       FishingSession(
         id: id ?? this.id,
         userId: userId ?? this.userId,
@@ -622,6 +644,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
         status: status ?? this.status,
         createdAt: createdAt ?? this.createdAt,
         updatedAt: updatedAt ?? this.updatedAt,
+        modalita: modalita ?? this.modalita,
       );
   FishingSession copyWithCompanion(FishingSessionsCompanion data) {
     return FishingSession(
@@ -656,6 +679,7 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
       status: data.status.present ? data.status.value : this.status,
       createdAt: data.createdAt.present ? data.createdAt.value : this.createdAt,
       updatedAt: data.updatedAt.present ? data.updatedAt.value : this.updatedAt,
+      modalita: data.modalita.present ? data.modalita.value : this.modalita,
     );
   }
 
@@ -684,7 +708,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           ..write('mode: $mode, ')
           ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
-          ..write('updatedAt: $updatedAt')
+          ..write('updatedAt: $updatedAt, ')
+          ..write('modalita: $modalita')
           ..write(')'))
         .toString();
   }
@@ -713,7 +738,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
         mode,
         status,
         createdAt,
-        updatedAt
+        updatedAt,
+        modalita
       ]);
   @override
   bool operator ==(Object other) =>
@@ -741,7 +767,8 @@ class FishingSession extends DataClass implements Insertable<FishingSession> {
           other.mode == this.mode &&
           other.status == this.status &&
           other.createdAt == this.createdAt &&
-          other.updatedAt == this.updatedAt);
+          other.updatedAt == this.updatedAt &&
+          other.modalita == this.modalita);
 }
 
 class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
@@ -768,6 +795,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
   final Value<String> status;
   final Value<DateTime> createdAt;
   final Value<DateTime> updatedAt;
+  final Value<String> modalita;
   final Value<int> rowid;
   const FishingSessionsCompanion({
     this.id = const Value.absent(),
@@ -793,6 +821,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     this.status = const Value.absent(),
     this.createdAt = const Value.absent(),
     this.updatedAt = const Value.absent(),
+    this.modalita = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   FishingSessionsCompanion.insert({
@@ -819,6 +848,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     this.status = const Value.absent(),
     required DateTime createdAt,
     required DateTime updatedAt,
+    this.modalita = const Value.absent(),
     this.rowid = const Value.absent(),
   })  : id = Value(id),
         userId = Value(userId),
@@ -853,6 +883,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     Expression<String>? status,
     Expression<DateTime>? createdAt,
     Expression<DateTime>? updatedAt,
+    Expression<String>? modalita,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -879,6 +910,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       if (status != null) 'status': status,
       if (createdAt != null) 'created_at': createdAt,
       if (updatedAt != null) 'updated_at': updatedAt,
+      if (modalita != null) 'modalita': modalita,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -907,6 +939,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       Value<String>? status,
       Value<DateTime>? createdAt,
       Value<DateTime>? updatedAt,
+      Value<String>? modalita,
       Value<int>? rowid}) {
     return FishingSessionsCompanion(
       id: id ?? this.id,
@@ -932,6 +965,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
       status: status ?? this.status,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      modalita: modalita ?? this.modalita,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -1008,6 +1042,9 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
     if (updatedAt.present) {
       map['updated_at'] = Variable<DateTime>(updatedAt.value);
     }
+    if (modalita.present) {
+      map['modalita'] = Variable<String>(modalita.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -1040,6 +1077,7 @@ class FishingSessionsCompanion extends UpdateCompanion<FishingSession> {
           ..write('status: $status, ')
           ..write('createdAt: $createdAt, ')
           ..write('updatedAt: $updatedAt, ')
+          ..write('modalita: $modalita, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -4179,6 +4217,7 @@ typedef $$FishingSessionsTableCreateCompanionBuilder = FishingSessionsCompanion
   Value<String> status,
   required DateTime createdAt,
   required DateTime updatedAt,
+  Value<String> modalita,
   Value<int> rowid,
 });
 typedef $$FishingSessionsTableUpdateCompanionBuilder = FishingSessionsCompanion
@@ -4206,6 +4245,7 @@ typedef $$FishingSessionsTableUpdateCompanionBuilder = FishingSessionsCompanion
   Value<String> status,
   Value<DateTime> createdAt,
   Value<DateTime> updatedAt,
+  Value<String> modalita,
   Value<int> rowid,
 });
 
@@ -4340,6 +4380,9 @@ class $$FishingSessionsTableFilterComposer
 
   ColumnFilters<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get modalita => $composableBuilder(
+      column: $table.modalita, builder: (column) => ColumnFilters(column));
 
   Expression<bool> sessionCatchRefs(
       Expression<bool> Function($$SessionCatchTableFilterComposer f) f) {
@@ -4483,6 +4526,9 @@ class $$FishingSessionsTableOrderingComposer
 
   ColumnOrderings<DateTime> get updatedAt => $composableBuilder(
       column: $table.updatedAt, builder: (column) => ColumnOrderings(column));
+
+  ColumnOrderings<String> get modalita => $composableBuilder(
+      column: $table.modalita, builder: (column) => ColumnOrderings(column));
 }
 
 class $$FishingSessionsTableAnnotationComposer
@@ -4562,6 +4608,9 @@ class $$FishingSessionsTableAnnotationComposer
 
   GeneratedColumn<DateTime> get updatedAt =>
       $composableBuilder(column: $table.updatedAt, builder: (column) => column);
+
+  GeneratedColumn<String> get modalita =>
+      $composableBuilder(column: $table.modalita, builder: (column) => column);
 
   Expression<T> sessionCatchRefs<T extends Object>(
       Expression<T> Function($$SessionCatchTableAnnotationComposer a) f) {
@@ -4677,6 +4726,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             Value<String> status = const Value.absent(),
             Value<DateTime> createdAt = const Value.absent(),
             Value<DateTime> updatedAt = const Value.absent(),
+            Value<String> modalita = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FishingSessionsCompanion(
@@ -4703,6 +4753,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             status: status,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            modalita: modalita,
             rowid: rowid,
           ),
           createCompanionCallback: ({
@@ -4729,6 +4780,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             Value<String> status = const Value.absent(),
             required DateTime createdAt,
             required DateTime updatedAt,
+            Value<String> modalita = const Value.absent(),
             Value<int> rowid = const Value.absent(),
           }) =>
               FishingSessionsCompanion.insert(
@@ -4755,6 +4807,7 @@ class $$FishingSessionsTableTableManager extends RootTableManager<
             status: status,
             createdAt: createdAt,
             updatedAt: updatedAt,
+            modalita: modalita,
             rowid: rowid,
           ),
           withReferenceMapper: (p0) => p0

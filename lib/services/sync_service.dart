@@ -18,6 +18,10 @@ class SyncService {
     // 5. Carica le sessioni
     await database.syncPendingSessions();
 
+    await database.syncPendingSessionLogs();
+    await database.syncPendingCounterNames();
+    await database.syncPendingSessionCounters();
+
     // 6. Carica le catture
     await database.syncPendingSessionCatches();
 
@@ -29,6 +33,10 @@ class SyncService {
 
     // 9. Scarica le catture
     await database.syncSessionCatchesFromSupabase();
+
+    await database.syncSessionLogsFromSupabase();
+    await database.syncCounterNamesFromSupabase();
+    await database.syncSessionCountersFromSupabase();
 
     // 10. Profilo
     await database.downloadProfile();

@@ -27,7 +27,6 @@ import 'session_detail_page.dart';
 
 const uuid = Uuid();
 
-
 class NewSessionPage extends StatefulWidget {
   final AppDatabase database;
   final FishingSession? session;
@@ -38,16 +37,14 @@ class NewSessionPage extends StatefulWidget {
     this.session,
   });
 
-
   @override
   State<NewSessionPage> createState() => _NewSessionPageState();
 }
 
 class _NewSessionPageState extends State<NewSessionPage> {
+  final List<CatchRow> catches = [];
 
-final List<CatchRow> catches = [];
-
-final List<String> availableSpecies = [];
+  final List<String> availableSpecies = [];
 
   late TextEditingController luogoController;
   late TextEditingController noteController;
@@ -73,8 +70,8 @@ final List<String> availableSpecies = [];
   double? gpsSpeed;
 
   String? gpsSpotName;
-double? gpsSpotDistance;
-bool gpsSearching = false;
+  double? gpsSpotDistance;
+  bool gpsSearching = false;
 
   bool acquiringGps = false;
 
@@ -91,7 +88,7 @@ bool gpsSearching = false;
   String? selectedSpotId;
   String? selectedSpotNome;
 
-String? sessionMode;
+  String? sessionMode;
 
   @override
   void initState() {
@@ -113,7 +110,6 @@ String? sessionMode;
       text: s?.temperaturaAcqua?.toString() ?? '',
     );
     if (s != null) {
-
       sessionMode = s.mode;
 
       tipoPescata = s.tipoPescata;
@@ -136,7 +132,7 @@ String? sessionMode;
 
       faseLunare = s.faseLunare ??
           moonService.getMoonPhase(
-            s.data ,
+            s.data,
           );
 
       oraInizio = TimeOfDay(
@@ -150,7 +146,6 @@ String? sessionMode;
       );
 
       loadSessionCatches();
-
     } else {
       faseLunare = moonService.getMoonPhase(
         data,
@@ -159,38 +154,37 @@ String? sessionMode;
   }
 
   Future<void> loadAvailableSpecies() async {
-  final lista = await widget.database.getUsedSpecies();
+    final lista = await widget.database.getUsedSpecies();
 
-  if (!mounted) return;
+    if (!mounted) return;
 
-  setState(() {
-    availableSpecies
-      ..clear()
-      ..addAll(lista);
-  });
-}
+    setState(() {
+      availableSpecies
+        ..clear()
+        ..addAll(lista);
+    });
+  }
 
-Future<void> loadSessionCatches() async {
-  catches.clear();
+  Future<void> loadSessionCatches() async {
+    catches.clear();
 
-  final lista = await widget.database.getSessionCatches(
-    widget.session!.id,
-  );
-
-  for (final c in lista) {
-    catches.add(
-      CatchRow(
-        species: c.species,
-        quantity: c.quantity,
-      ),
+    final lista = await widget.database.getSessionCatches(
+      widget.session!.id,
     );
-  }
 
-  if (mounted) {
-    setState(() {});
-  }
-}
+    for (final c in lista) {
+      catches.add(
+        CatchRow(
+          species: c.species,
+          quantity: c.quantity,
+        ),
+      );
+    }
 
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
   Future<void> aggiornaMeteo() async {
     if (latitudine == null || longitudine == null) {
@@ -240,9 +234,9 @@ Future<void> loadSessionCatches() async {
         );
       });
 
-if (sessionMode == SessionMode.standard) {
-  await aggiornaMeteo();
-}
+      if (sessionMode == SessionMode.standard) {
+        await aggiornaMeteo();
+      }
     }
   }
 
@@ -265,20 +259,19 @@ if (sessionMode == SessionMode.standard) {
     });
 
     if (inizio) {
-if (sessionMode == SessionMode.standard) {
-  await aggiornaMeteo();
-}
+      if (sessionMode == SessionMode.standard) {
+        await aggiornaMeteo();
+      }
     }
   }
 
   Future<void> usaPosizioneAttuale() async {
     try {
-
       setState(() {
-  gpsSearching = true;
-  gpsSpotName = null;
-  gpsSpotDistance = null;
-});
+        gpsSearching = true;
+        gpsSpotName = null;
+        gpsSpotDistance = null;
+      });
 
       bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
 
@@ -303,8 +296,8 @@ if (sessionMode == SessionMode.standard) {
         return;
       }
 
-final gpsFix = await gpsService.acquireBestPosition(
-          targetAccuracy: 10,
+      final gpsFix = await gpsService.acquireBestPosition(
+        targetAccuracy: 10,
         timeout: const Duration(seconds: 20),
         onUpdate: (position) {
           gpsAccuracy = position.accuracy;
@@ -315,97 +308,95 @@ final gpsFix = await gpsService.acquireBestPosition(
           }
         },
       );
-latitudine = gpsFix.latitude;
-longitudine = gpsFix.longitude;
+      latitudine = gpsFix.latitude;
+      longitudine = gpsFix.longitude;
 
-final result = await widget.database.findNearestSpot(
-  latitude: latitudine!,
-  longitude: longitudine!,
-);
+      final result = await widget.database.findNearestSpot(
+        latitude: latitudine!,
+        longitude: longitudine!,
+      );
 
-if (result.found) {
-  gpsSpotName = result.spot!.nome;
-  gpsSpotDistance = result.distance;
+      if (result.found) {
+        gpsSpotName = result.spot!.nome;
+        gpsSpotDistance = result.distance;
 
+        const suggestDistance = 20.0;
 
+        if (result.distance! <= suggestDistance) {
+          final usaSpot = await showDialog<bool>(
+            context: context,
+            barrierDismissible: false,
+            builder: (context) => AlertDialog(
+              title: Text(T.spotAlreadyExists),
+              content: Text(
+                "${T.foundSpot}\n\n"
+                "${result.spot!.nome}\n\n"
+                "${T.distance(result.distance!)}\n\n"
+                "${T.useExistingSpotQuestion}",
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context, false),
+                  child: Text(T.createNewSpot),
+                ),
+                FilledButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  child: Text(T.useExistingSpot),
+                ),
+              ],
+            ),
+          );
 
-  const suggestDistance = 20.0;
+          if (usaSpot == true) {
+            selectedSpotId = result.spot!.id;
+            luogoController.text = result.spot!.nome;
+          } else {
+            selectedSpotId = null;
+          }
+        } else {
+          selectedSpotId = null;
+        }
+      } else {
+        selectedSpotId = null;
+        gpsSpotName = null;
+        gpsSpotDistance = null;
+      }
+      if (selectedSpotId == null) {
+        final online = await ConnectivityService.isOnline();
 
-  if (result.distance! <= suggestDistance) {
-    final usaSpot = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-title: Text(T.spotAlreadyExists),
-content: Text(
-  "${T.foundSpot}\n\n"
-  "${result.spot!.nome}\n\n"
-  "${T.distance(result.distance!)}\n\n"
-  "${T.useExistingSpotQuestion}",
-),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-child: Text(T.createNewSpot),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-child: Text(T.useExistingSpot),          ),
-        ],
-      ),
-    );
+        if (selectedSpotId == null && online) {
+          try {
+            final places = await placemarkFromCoordinates(
+              latitudine!,
+              longitudine!,
+            );
 
-    if (usaSpot == true) {
-      selectedSpotId = result.spot!.id;
-      luogoController.text = result.spot!.nome;
-    } else {
-      selectedSpotId = null;
-    }
-  } else {
-    selectedSpotId = null;
-  }
-} else {
-  selectedSpotId = null;
-  gpsSpotName = null;
-  gpsSpotDistance = null;
-}
-if (selectedSpotId == null) {
-final online = await ConnectivityService.isOnline();
-
-if (selectedSpotId == null && online) {
-  try {
-    final places = await placemarkFromCoordinates(
-      latitudine!,
-      longitudine!,
-    );
-
-    if (places.isNotEmpty) {
-      luogoController.text =
-          places.first.locality ??
-          places.first.subAdministrativeArea ??
-          T.positionFound;
-    }
-  } catch (_) {}
-}
-}
+            if (places.isNotEmpty) {
+              luogoController.text = places.first.locality ??
+                  places.first.subAdministrativeArea ??
+                  T.positionFound;
+            }
+          } catch (_) {}
+        }
+      }
       try {
-if (sessionMode == SessionMode.standard) {
-  await aggiornaMeteo();
-}
+        if (sessionMode == SessionMode.standard) {
+          await aggiornaMeteo();
+        }
       } catch (_) {
         // offline: ignora
       }
 
-setState(() {
-  gpsSearching = false;
-});
+      setState(() {
+        gpsSearching = false;
+      });
     } catch (e) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-content: Text(
-  T.gpsError(e.toString()),
+          content: Text(
+            T.gpsError(e.toString()),
           ),
         ),
       );
@@ -470,7 +461,6 @@ content: Text(
             : p.subAdministrativeArea ?? "Spot";
       }
     } catch (e) {
-
       luogoController.text =
           "Spot ${latitudine!.toStringAsFixed(4)}, ${longitudine!.toStringAsFixed(4)}";
     }
@@ -506,215 +496,219 @@ content: Text(
 
     longitudine = spot['longitudine'];
 
-if (await ConnectivityService.isOnline()) {
-  await aggiornaMeteo();
-}
+    if (await ConnectivityService.isOnline()) {
+      await aggiornaMeteo();
+    }
 
-if (mounted) {
-  setState(() {});
-} 
-}
-
-Future<void> saveSession() async {
-  if (luogoController.text.trim().isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(T.enterLocation),
-      ),
-    );
-    return;
+    if (mounted) {
+      setState(() {});
+    }
   }
 
-if (sessionMode == null) {
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: Text(T.select),
-    ),
-  );
-  return;
-}
+  Future<void> saveSession() async {
+    if (luogoController.text.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(T.enterLocation),
+        ),
+      );
+      return;
+    }
 
-  try {
-    setState(() {
-      loading = true;
-    });
+    if (sessionMode == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(T.select),
+        ),
+      );
+      return;
+    }
 
-    late final String sessionId;
+    try {
+      setState(() {
+        loading = true;
+      });
 
-    final inizio = DateTime(
-      data.year,
-      data.month,
-      data.day,
-      oraInizio.hour,
-      oraInizio.minute,
-    );
+      late final String sessionId;
 
-    final fine = DateTime(
-      data.year,
-      data.month,
-      data.day,
-      oraFine.hour,
-      oraFine.minute,
-    );
-
-    String? spotId;
-
-    if (selectedSpotId != null) {
-      spotId = selectedSpotId;
-    } else {
-      final spot = await widget.database.getSpotByNome(
-        luogoController.text.trim(),
+      final inizio = DateTime(
+        data.year,
+        data.month,
+        data.day,
+        oraInizio.hour,
+        oraInizio.minute,
       );
 
-      if (spot != null) {
-        spotId = spot.id;
-      } else {
-        final nuovoId = uuid.v4();
+      final fine = DateTime(
+        data.year,
+        data.month,
+        data.day,
+        oraFine.hour,
+        oraFine.minute,
+      );
 
-        await widget.database.insertSpot(
-          SpotsCompanion.insert(
-            id: nuovoId,
+      String? spotId;
+
+      if (selectedSpotId != null) {
+        spotId = selectedSpotId;
+      } else {
+        final spot = await widget.database.getSpotByNome(
+          luogoController.text.trim(),
+        );
+
+        if (spot != null) {
+          spotId = spot.id;
+        } else {
+          final nuovoId = uuid.v4();
+
+          await widget.database.insertSpot(
+            SpotsCompanion.insert(
+              id: nuovoId,
+              userId: Supabase.instance.client.auth.currentUser!.id,
+              nome: luogoController.text.trim(),
+              latitudine: Value(latitudine),
+              longitudine: Value(longitudine),
+              createdAt: DateTime.now().toUtc(),
+              updatedAt: DateTime.now().toUtc(),
+            ),
+          );
+
+          spotId = nuovoId;
+        }
+      }
+
+      final acqua = double.tryParse(
+        temperaturaAcquaController.text.replaceAll(',', '.'),
+      );
+
+      if (widget.session == null) {
+        sessionId = uuid.v4();
+
+        await widget.database.insertSession(
+          FishingSessionsCompanion.insert(
+            id: sessionId,
             userId: Supabase.instance.client.auth.currentUser!.id,
-            nome: luogoController.text.trim(),
+            spotId: Value(spotId),
+            luogo: luogoController.text.trim(),
+            tipoPescata: tipoPescata,
+            data: data,
+            oraInizio: inizio,
+            oraFine: fine,
             latitudine: Value(latitudine),
             longitudine: Value(longitudine),
+            temperatura: Value(temperatura),
+            temperaturaAcqua: Value(acqua),
+            vento: Value(vento),
+            pressione: Value(pressione),
+            condizioni: Value(condizioni),
+            faseLunare: Value(faseLunare),
+            mode: Value(sessionMode!),
+            status: Value(
+              sessionMode == SessionMode.live
+                  ? SessionStatus.planned
+                  : SessionStatus.completed,
+            ),
+            note: Value(noteController.text),
             createdAt: DateTime.now().toUtc(),
             updatedAt: DateTime.now().toUtc(),
           ),
         );
+      } else {
+        sessionId = widget.session!.id;
 
-        spotId = nuovoId;
+        await widget.database.updateSession(
+          widget.session!.copyWith(
+            spotId: Value(spotId),
+            luogo: luogoController.text.trim(),
+            tipoPescata: tipoPescata,
+            data: data,
+            oraInizio: inizio,
+            oraFine: fine,
+            latitudine: Value(latitudine),
+            longitudine: Value(longitudine),
+            temperatura: Value(temperatura),
+            temperaturaAcqua: Value(acqua),
+            vento: Value(vento),
+            pressione: Value(pressione),
+            condizioni: Value(condizioni),
+            faseLunare: Value(faseLunare),
+            mode: sessionMode,
+            status: sessionMode == SessionMode.live
+                ? SessionStatus.planned
+                : SessionStatus.completed,
+            note: Value(noteController.text),
+            updatedAt: DateTime.now().toUtc(),
+          ),
+        );
       }
-    }
 
-    final acqua = double.tryParse(
-      temperaturaAcquaController.text.replaceAll(',', '.'),
-    );
+      // ===== SALVATAGGIO CATTURE =====
 
-    if (widget.session == null) {
-      sessionId = uuid.v4();
+      await widget.database.deleteSessionCatches(sessionId);
 
-      await widget.database.insertSession(
-        FishingSessionsCompanion.insert(
-          id: sessionId,
-          userId: Supabase.instance.client.auth.currentUser!.id,
-          spotId: Value(spotId),
-          luogo: luogoController.text.trim(),
-          tipoPescata: tipoPescata,
-          data: data,
-          oraInizio: inizio,
-          oraFine: fine,
-          latitudine: Value(latitudine),
-          longitudine: Value(longitudine),
-          temperatura: Value(temperatura),
-          temperaturaAcqua: Value(acqua),
-          vento: Value(vento),
-          pressione: Value(pressione),
-          condizioni: Value(condizioni),
-          faseLunare: Value(faseLunare),
-          mode: Value(sessionMode!),
-          status: Value(
-          sessionMode == SessionMode.live
-            ? SessionStatus.planned
-            : SessionStatus.completed,),
-          note: Value(noteController.text),
-          createdAt: DateTime.now().toUtc(),
-          updatedAt: DateTime.now().toUtc(),
-        ),
-      );
-    } else {
-      sessionId = widget.session!.id;
+      final test = await widget.database.getSessionCatches(sessionId);
+      debugPrint("DOPO DELETE: ${test.length}");
 
-      await widget.database.updateSession(
-        widget.session!.copyWith(
-          spotId: Value(spotId),
-          luogo: luogoController.text.trim(),
-          tipoPescata: tipoPescata,
-          data: data,
-          oraInizio: inizio,
-          oraFine: fine,
-          latitudine: Value(latitudine),
-          longitudine: Value(longitudine),
-          temperatura: Value(temperatura),
-          temperaturaAcqua: Value(acqua),
-          vento: Value(vento),
-          pressione: Value(pressione),
-          condizioni: Value(condizioni),
-          faseLunare: Value(faseLunare),
-          mode: sessionMode,
-          status: sessionMode == SessionMode.live
-            ? SessionStatus.planned
-            : SessionStatus.completed,
-          note: Value(noteController.text),
-          updatedAt: DateTime.now().toUtc(),
-        ),
-      );
-    }
+      for (final c in catches) {
+        if (c.species == null || c.species!.trim().isEmpty) continue;
 
-    // ===== SALVATAGGIO CATTURE =====
+        if (c.quantity <= 0) continue;
 
-    await widget.database.deleteSessionCatches(sessionId);
+        await widget.database.saveSessionCatch(
+          SessionCatchCompanion.insert(
+            id: uuid.v4(),
+            sessionId: sessionId,
+            species: c.species!,
+            quantity: Value(c.quantity),
+          ),
+        );
 
-    final test = await widget.database.getSessionCatches(sessionId);
-debugPrint("DOPO DELETE: ${test.length}");
+        final test2 = await widget.database.getSessionCatches(sessionId);
+        debugPrint("DOPO INSERT: ${test2.length}");
+      }
 
-    for (final c in catches) {
-      if (c.species == null || c.species!.trim().isEmpty) continue;
-
-      if (c.quantity <= 0) continue;
-
-await widget.database.saveSessionCatch(
-  SessionCatchCompanion.insert(
-    id: uuid.v4(),
-    sessionId: sessionId,
-    species: c.species!,
-    quantity: Value(c.quantity),
-  ),
-);
-
-final test2 = await widget.database.getSessionCatches(sessionId);
-debugPrint("DOPO INSERT: ${test2.length}");
-    }
-
-    if (!mounted) return;
-
-if (sessionMode == SessionMode.standard) {
-  Navigator.pop(context, true);
-} else {
-  final nuovaSessione =
-      await widget.database.getSessionById(sessionId);
-
-  if (!mounted || nuovaSessione == null) return;
-
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(
-      builder: (_) => SessionDetailPage(
-        database: widget.database,
-        session: nuovaSessione,
-      ),
-    ),
-  );
-}
-} catch (e, st) {
-  debugPrint('ERRORE: $e');
-  debugPrint('STACK:');
-  debugPrint(st.toString());
       if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(e.toString()),
-      ),
-    );
-  } finally {
-    if (mounted) {
-      setState(() {
-        loading = false;
-      });
+      if (sessionMode == SessionMode.standard) {
+        Navigator.pop(context, true);
+      } else {
+        final nuovaSessione = await widget.database.getSessionById(sessionId);
+
+        if (!mounted || nuovaSessione == null) return;
+
+        final result = await Navigator.push<bool>(
+          context,
+          MaterialPageRoute(
+            builder: (_) => SessionDetailPage(
+              database: widget.database,
+              session: nuovaSessione,
+            ),
+          ),
+        );
+
+        if (result == true && mounted) {
+          Navigator.pop(context, true);
+        }
+      }
+    } catch (e, st) {
+      debugPrint('ERRORE: $e');
+      debugPrint('STACK:');
+      debugPrint(st.toString());
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
-}
 
   @override
   void dispose() {
@@ -737,150 +731,127 @@ if (sessionMode == SessionMode.standard) {
         padding: const EdgeInsets.all(16),
         child: ListView(
           children: [
-LocationSection(
-  luogoController: luogoController,
-  gpsAccuracy: gpsAccuracy,
-  gpsSearching: gpsSearching,
-  gpsSpotName: gpsSpotName,
-  gpsSpotDistance: gpsSpotDistance,
-  onCurrentLocation: usaPosizioneAttuale,
-  onSelectLocation: () async {
-    final online = await ConnectivityService.isOnline();
+            LocationSection(
+              luogoController: luogoController,
+              gpsAccuracy: gpsAccuracy,
+              gpsSearching: gpsSearching,
+              gpsSpotName: gpsSpotName,
+              gpsSpotDistance: gpsSpotDistance,
+              online: ConnectivityService.online.value,
+              onCurrentLocation: usaPosizioneAttuale,
+              onSelectLocation: () async {
+                final online = await ConnectivityService.isOnline();
 
-    if (online) {
-      await scegliDaMappa();
-    } else {
-      await scegliDaLista();
-    }
-  },
-),
-          
-const SizedBox(height: 16),
-FishingTypeSection(
-  tipoPescata: tipoPescata,
-  onChanged: (value) {
-    setState(() {
-      tipoPescata = value;
-    });
-  },
-),
-
-const SizedBox(height: 16),
+                if (online) {
+                  await scegliDaMappa();
+                } else {
+                  await scegliDaLista();
+                }
+              },
+            ),
             const SizedBox(height: 16),
+            FishingTypeSection(
+              tipoPescata: tipoPescata,
+              onChanged: (value) {
+                setState(() {
+                  tipoPescata = value;
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              initialValue: sessionMode,
+              decoration: const InputDecoration(
+                labelText: "Modalità sessione",
+              ),
+              items: const [
+                DropdownMenuItem(
+                  value: SessionMode.standard,
+                  child: Text("Standard"),
+                ),
+                DropdownMenuItem(
+                  value: SessionMode.live,
+                  child: Text("Live"),
+                ),
+              ],
+              onChanged: (value) async {
+                setState(() {
+                  sessionMode = value!;
+                });
 
-DropdownButtonFormField<String>(
-  initialValue: sessionMode,
-  decoration: const InputDecoration(
-    labelText: "Modalità sessione",
-  ),
-  items: const [
-    DropdownMenuItem(
-      value: SessionMode.standard,
-      child: Text("Standard"),
-    ),
-    DropdownMenuItem(
-      value: SessionMode.live,
-      child: Text("Live"),
-    ),
-  ],
-  
-onChanged: (value) async {
-  setState(() {
-    sessionMode = value!;
-  });
-
-  
-
-  if (sessionMode == SessionMode.standard &&
-      latitudine != null &&
-      longitudine != null) {
-if (sessionMode == SessionMode.standard) {
-  await aggiornaMeteo();
-}
-  }
-  
-},
-
-),
-
-const SizedBox(height: 16),
-
+                if (sessionMode == SessionMode.standard &&
+                    latitudine != null &&
+                    longitudine != null) {
+                  if (sessionMode == SessionMode.standard) {
+                    await aggiornaMeteo();
+                  }
+                }
+              },
+            ),
+            const SizedBox(height: 16),
             if (sessionMode == SessionMode.standard) ...[
-
               WeatherSection(
-  temperatura: temperatura,
-  temperaturaAcquaController: temperaturaAcquaController,
-  vento: vento,
-  pressione: pressione,
-  faseLunare: faseLunare,
-),
-
+                temperatura: temperatura,
+                temperaturaAcquaController: temperaturaAcquaController,
+                vento: vento,
+                pressione: pressione,
+                faseLunare: faseLunare,
+              ),
             ],
-
-
-const SizedBox(height: 16),
-
-if (sessionMode == SessionMode.standard) ...[
-  DateTimeSection(
-    data: data,
-    oraInizio: oraInizio,
-    oraFine: oraFine,
-    onSelectDate: selezionaData,
-    onSelectStart: () => selezionaOra(true),
-    onSelectEnd: () => selezionaOra(false),
-  ),
-],
- const SizedBox(height: 10),
-
- if (sessionMode == SessionMode.standard) ...[
- 
-NotesSection(
-  controller: noteController,
-),
- ],
-
-const SizedBox(height: 20),
-
-if (sessionMode == SessionMode.standard) ...[
-  CatchesSection(
-    catches: catches,
-    availableSpecies: availableSpecies,
-
-    onAddSpecies: () {
-      setState(() {
-        catches.add(CatchRow());
-      });
-    },
-
-    onAddQuantity: (index) {
-      setState(() {
-        catches[index].quantity++;
-      });
-    },
-
-    onRemoveQuantity: (index) {
-      setState(() {
-        if (catches[index].quantity > 0) {
-          catches[index].quantity--;
-        }
-      });
-    },
-
-    onDelete: (index) {
-      setState(() {
-        catches.removeAt(index);
-      });
-    },
-  ),
-],
-const SizedBox(height: 10),
-
-SessionButtons(
-  loading: loading,
-  isNewSession: widget.session == null,
-  onSave: saveSession,
-),
-    ],
+            const SizedBox(height: 16),
+            if (sessionMode == SessionMode.standard) ...[
+              DateTimeSection(
+                data: data,
+                oraInizio: oraInizio,
+                oraFine: oraFine,
+                onSelectDate: selezionaData,
+                onSelectStart: () => selezionaOra(true),
+                onSelectEnd: () => selezionaOra(false),
+              ),
+            ],
+            const SizedBox(height: 10),
+            if (sessionMode == SessionMode.standard) ...[
+              NotesSection(
+                controller: noteController,
+              ),
+            ],
+            const SizedBox(height: 20),
+            if (sessionMode == SessionMode.standard) ...[
+              CatchesSection(
+                catches: catches,
+                availableSpecies: availableSpecies,
+                onAddSpecies: () {
+                  setState(() {
+                    catches.add(CatchRow());
+                  });
+                },
+                onAddQuantity: (index) {
+                  setState(() {
+                    catches[index].quantity++;
+                  });
+                },
+                onRemoveQuantity: (index) {
+                  setState(() {
+                    if (catches[index].quantity > 0) {
+                      catches[index].quantity--;
+                    }
+                  });
+                },
+                onDelete: (index) {
+                  setState(() {
+                    catches.removeAt(index);
+                  });
+                },
+              ),
+            ],
+            const SizedBox(height: 10),
+            SessionButtons(
+              loading: loading,
+              isNewSession: widget.session == null,
+              onSave: saveSession,
+            ),
+          ],
         ),
       ),
     );
