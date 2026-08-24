@@ -7,6 +7,9 @@ import '../../../database/app_database.dart';
 import '../../../core/t.dart';
 import '../models/live_counter.dart';
 import '../../../database/session_event_type.dart';
+import 'package:vibration/vibration.dart';
+import 'package:flutter/services.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 class LiveSessionPage extends StatefulWidget {
   final AppDatabase database;
@@ -43,6 +46,11 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
   Duration lastCatchTime = Duration.zero;
   Duration recoveryTime = Duration.zero;
   Duration sessionTime = Duration.zero;
+  Duration? recoveryDuration;
+
+  bool recoveryExpired = false;
+  bool recoveryAlerted = false;
+  bool recoverySoundEnabled = true;
 
   DateTime? lastCatchAt;
 
@@ -52,6 +60,9 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
         0,
         (sum, c) => sum + c.quantity,
       );
+
+  final AudioPlayer recoveryPlayer = AudioPlayer();
+
 
   @override
   void initState() {
@@ -84,8 +95,15 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
             );
           }
 
-          recoveryTime += const Duration(seconds: 1);
-        });
+if (recoveryDuration != null) {
+  recoveryTime += const Duration(seconds: 1);
+
+  if (recoveryTime >= recoveryDuration! &&
+      !recoveryAlerted) {
+    recoveryTime = recoveryDuration!;
+    triggerRecoveryAlert();
+  }
+}        });
       },
     );
   }
@@ -95,6 +113,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
     timer?.cancel();
     WakelockPlus.disable();
     super.dispose();
+    recoveryPlayer.dispose();
   }
 
   String format(Duration d) {
@@ -105,6 +124,146 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
     return "$h:$m:$s";
   }
 
+Future<void> selectRecovery() async {
+  final result = await showModalBottomSheet<double?>(
+    context: context,
+    builder: (context) {
+      return SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('OFF'),
+              onTap: () => Navigator.pop(context, 0.0),
+            ),
+            ListTile(
+              title: const Text('1 min'),
+              onTap: () => Navigator.pop(context, 1.0),
+            ),
+            ListTile(
+              title: const Text('2 min'),
+              onTap: () => Navigator.pop(context, 2.0),
+            ),
+            ListTile(
+              title: const Text('3 min'),
+              onTap: () => Navigator.pop(context, 3.0),
+            ),
+            ListTile(
+              title: const Text('5 min'),
+              onTap: () => Navigator.pop(context, 5.0),
+            ),
+            ListTile(
+              title: const Text('8 min'),
+              onTap: () => Navigator.pop(context, 8.0),
+            ),
+            ListTile(
+              title: const Text('Personalizza...'),
+              onTap: () async {
+                final controller = TextEditingController();
+
+                final custom = await showDialog<double>(
+                  context: context,
+                  builder: (dialogContext) {
+                    return AlertDialog(
+                      title: const Text('Recupero personalizzato'),
+                      content: TextField(
+                        controller: controller,
+                        keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        autofocus: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Minuti',
+                          hintText: 'Es. 2,5',
+                        ),
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(dialogContext).pop();
+                          },
+                          child: const Text('Annulla'),
+                        ),
+                        FilledButton(
+                          onPressed: () {
+                            final text = controller.text
+                                .trim()
+                                .replaceAll(',', '.');
+
+                            final value = double.tryParse(text);
+
+                            if (value == null || value <= 0) {
+                              return;
+                            }
+
+                            Navigator.of(dialogContext).pop(value);
+                          },
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+
+                if (!context.mounted || custom == null) {
+                  return;
+                }
+
+                Navigator.of(context).pop(custom);
+              },
+            ),
+          ],
+        ),
+      );
+    },
+  );
+
+  if (!mounted || result == null) {
+    return;
+  }
+
+  setState(() {
+    if (result == 0.0) {
+      recoveryDuration = null;
+      recoveryTime = Duration.zero;
+      recoveryExpired = false;
+      recoveryAlerted = false;
+    } else {
+      recoveryDuration = Duration(
+        milliseconds: (result * 60 * 1000).round(),
+      );
+
+      recoveryTime = Duration.zero;
+      recoveryExpired = false;
+      recoveryAlerted = false;
+    }
+  });
+}
+
+Future<void> triggerRecoveryAlert() async {
+  if (recoveryAlerted) return;
+
+  recoveryAlerted = true;
+  recoveryExpired = true;
+
+  final hasVibrator = await Vibration.hasVibrator();
+
+  if (hasVibrator) {
+    await Vibration.vibrate(
+      duration: 700,
+    );
+  }
+
+  if (recoverySoundEnabled) {
+    await recoveryPlayer.play(
+      AssetSource('sounds/recovery_beep.wav'),
+    );
+  }
+
+  if (!mounted) return;
+
+  setState(() {});
+}
   // ------------------------------------------------------------
   // START SESSIONE
   // ------------------------------------------------------------
@@ -122,18 +281,22 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
       widget.session.id,
     );
 
-    setState(() {
-      sessionStarted = true;
+setState(() {
+  sessionStarted = true;
 
-      lastCastTime = Duration.zero;
-      lastCatchTime = Duration.zero;
-      recoveryTime = Duration.zero;
-      sessionTime = Duration.zero;
+  lastCastTime = Duration.zero;
+  lastCatchTime = Duration.zero;
+  recoveryTime = Duration.zero;
 
-      casts = 1;
+  recoveryExpired = false;
+  recoveryAlerted = false;
 
-      castResults.clear();
-    });
+  sessionTime = Duration.zero;
+
+  casts = 1;
+
+  castResults.clear();
+});
   }
 
   // ------------------------------------------------------------
@@ -248,7 +411,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
     // è ancora quello in corso.
 
     final visibleResults =
-        results.length <= 10 ? results : results.sublist(results.length - 10);
+        results.length <= 15 ? results : results.sublist(results.length - 15);
 
     if (!mounted) return;
 
@@ -278,12 +441,15 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
 
     if (!mounted) return;
 
-    setState(() {
-      lastCastTime = Duration.zero;
-      recoveryTime = Duration.zero;
-      casts++;
-    });
-  }
+setState(() {
+  lastCastTime = Duration.zero;
+  recoveryTime = Duration.zero;
+
+  recoveryExpired = false;
+  recoveryAlerted = false;
+
+  casts++;
+});  }
 
   // ------------------------------------------------------------
   // FINE SESSIONE
@@ -361,56 +527,103 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 height: 1,
               ),
 
-              const SizedBox(height: 18),
+              const SizedBox(height: 12),
 
-              // ------------------------------------------------
-              // TEMPO ULTIMA CATTURA
-              // ------------------------------------------------
 
-              Text(
-                format(lastCastTime),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 54,
-                  fontWeight: FontWeight.bold,
-                ),
+// ------------------------------------------------
+// TEMPO ULTIMO CAST
+// ------------------------------------------------
+
+Text(
+  format(lastCastTime),
+  style: TextStyle(
+    color: recoveryExpired
+        ? Colors.orange
+        : Colors.white,
+    fontSize: 54,
+    fontWeight: FontWeight.bold,
+  ),
+),
+
+const SizedBox(height: 6),
+
+// ------------------------------------------------
+// RECUPERO
+// ------------------------------------------------
+
+Row(
+  mainAxisAlignment: MainAxisAlignment.center,
+  children: [
+    GestureDetector(
+      onTap: selectRecovery,
+      child: RichText(
+        text: TextSpan(
+          children: [
+            TextSpan(
+              text: "${T.recovery}: ",
+              style: const TextStyle(
+                color: Colors.white54,
+                fontSize: 16,
               ),
-
-              const SizedBox(height: 6),
-
-              Text(
-                "${T.lastCatch} ${format(lastCatchTime)}",
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 18,
-                ),
+            ),
+            TextSpan(
+              text: recoveryDuration == null
+                  ? T.off
+                  : "${recoveryDuration!.inMinutes}:"
+                      "${(recoveryDuration!.inSeconds % 60).toString().padLeft(2, '0')}",
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
               ),
+            ),
+          ],
+        ),
+      ),
+    ),
 
-              const SizedBox(height: 4),
+    const SizedBox(width: 12),
 
-              Text(
-                recoveryTime == Duration.zero
-                    ? T.off
-                    : "${T.recovery}: "
-                        "${recoveryTime.inMinutes}:"
-                        "${(recoveryTime.inSeconds % 60).toString().padLeft(2, '0')} / "
-                        "${recoveryTime.inMinutes}:00",
-                style: const TextStyle(
-                  color: Colors.white54,
-                  fontSize: 15,
-                ),
-              ),
+    GestureDetector(
+      onTap: () {
+        setState(() {
+          recoverySoundEnabled = !recoverySoundEnabled;
+        });
+      },
+      child: Icon(
+        recoverySoundEnabled
+            ? Icons.volume_up
+            : Icons.volume_off,
+        color: Colors.white54,
+        size: 22,
+      ),
+    ),
+  ],
+),
 
-              const SizedBox(height: 20),
+const SizedBox(height: 3),
 
-              const Divider(
-                color: Colors.white24,
-                height: 1,
-              ),
+// ------------------------------------------------
+// ULTIMA CATTURA
+// ------------------------------------------------
 
-              const SizedBox(height: 18),
+Text(
+  "${T.lastCatch} ${format(lastCatchTime)}",
+  style: const TextStyle(
+    color: Colors.white54,
+    fontSize: 14,
+  ),
+),
 
-              // ------------------------------------------------
+const SizedBox(height: 20),
+
+const Divider(
+  color: Colors.white24,
+  height: 1,
+),
+
+const SizedBox(height: 18),
+       // ------------------------------------------------
               // START / CAST
               // ------------------------------------------------
 
@@ -451,14 +664,14 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
               // SEQUENZA 10 LANCI
               // ------------------------------------------------
 
-              const SizedBox(height: 12),
+              const SizedBox(height: 10),
 
               SizedBox(
                 height: 24,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: List.generate(
-                    10,
+                    15,
                     (index) {
                       final hasResult = index < castResults.length;
 
@@ -480,7 +693,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 ),
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
 
               // ------------------------------------------------
               // CATTURE
@@ -498,33 +711,34 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                       ),
                     ),
                   ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        counters.add(
-                          LiveCounter(
-                            counter: counters.length + 1,
-                          ),
-                        );
-                      });
-                    },
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Text(
-                        "+",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 30,
+              if (counters.length < 4)
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      counters.add(
+                        LiveCounter(
+                          counter: counters.length + 1,
                         ),
+                      );
+                    });
+                  },
+                  child: const Padding(
+                    padding: EdgeInsets.all(6),
+                    child: Text(
+                      "+",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 30,
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+            ],
+          ),
 
-              const Divider(
-                color: Colors.white24,
-              ),
+          const Divider(
+            color: Colors.white24,
+          ),
 
               // ------------------------------------------------
               // CONTATORI
@@ -614,29 +828,23 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 ),
               ),
 
+              const SizedBox(height: 8),
+              
+              // ------------------------------------------------
+              // SPAZIO CONTATORI
+              // ------------------------------------------------
+
               const Spacer(),
 
               // ------------------------------------------------
               // DURATA
               // ------------------------------------------------
 
-              const SizedBox(height: 4),
-
               Text(
-                T.duration,
+                "${T.duration}: ${format(sessionTime)}",
                 style: const TextStyle(
                   color: Colors.white54,
-                ),
-              ),
-
-              const SizedBox(height: 4),
-
-              Text(
-                format(sessionTime),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
                 ),
               ),
 
@@ -647,7 +855,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                 height: 1,
               ),
 
-              const SizedBox(height: 8),
+              const SizedBox(height: 4),
 
               // ------------------------------------------------
               // FINE SESSIONE
@@ -665,8 +873,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-              ),
-            ],
+              ),            ],
           ),
         ),
       ),
@@ -686,7 +893,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
     return Column(
       children: [
         SizedBox(
-          height: 52,
+          height: 58,
           child: Row(
             children: [
               Expanded(
