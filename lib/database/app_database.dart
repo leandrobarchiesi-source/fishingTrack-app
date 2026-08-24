@@ -567,13 +567,19 @@ class AppDatabase extends _$AppDatabase {
             ))
           .get();
       print("Sessioni da sincronizzare: ${pending.length}");
-      for (final s in pending) {
-        // Sessione eliminata localmente
-        print(
-          "SYNC SESSIONE ${s.id} → mode = '${s.mode}'",
-        );
-        // Inserimento / aggiornamento
-        await Supabase.instance.client.from('fishing_sessions').upsert({
+for (final s in pending) {
+  print("=== SESSIONE DA SINCRONIZZARE ===");
+  print("SESSIONE ID = ${s.id}");
+  print("SPOT ID SESSIONE = ${s.spotId}");
+  print("MODE = ${s.mode}");
+
+  print(
+    "SYNC SESSIONE ${s.id} → mode = '${s.mode}'",
+  );
+
+  // Inserimento / aggiornamento
+  await Supabase.instance.client.from('fishing_sessions').upsert({        // Sessione eliminata localmente
+        
           'id': s.id,
           'user_id': s.userId,
           'spot_id': s.spotId,
@@ -843,38 +849,43 @@ class AppDatabase extends _$AppDatabase {
     }
   }
 
-  Future<void> syncPendingSpots() async {
-    try {
-      final pending = await (select(
-        spots,
-      )..where(
-              (t) => t.synced.equals(false),
-            ))
-          .get();
+Future<void> syncPendingSpots() async {
+  try {
+    final pending = await (select(
+      spots,
+    )..where(
+            (t) => t.synced.equals(false),
+          ))
+        .get();
 
-      for (final s in pending) {
-        // Spot eliminato localmente
-        // Inserimento / aggiornamento
-        await Supabase.instance.client.from('spots').upsert({
-          'id': s.id,
-          'user_id': s.userId,
-          'nome': s.nome,
-          'latitudine': s.latitudine,
-          'longitudine': s.longitudine,
-          'created_at': s.createdAt.toUtc().toIso8601String(),
-          'updated_at': DateTime.now().toUtc().toIso8601String(),
-        });
-
-        await (update(spots)..where((t) => t.id.equals(s.id))).write(
-          const SpotsCompanion(
-            synced: Value(true),
-          ),
-        );
-      }
-    } catch (e) {
-      print("Errore sync pending spots: $e");
+    print("=== SPOT DA SINCRONIZZARE ===");
+    for (final s in pending) {
+      print("SPOT ID = ${s.id}");
+      print("SPOT NOME = ${s.nome}");
+      print("SPOT USER = ${s.userId}");
     }
+
+    for (final s in pending) {
+      await Supabase.instance.client.from('spots').upsert({
+        'id': s.id,
+        'user_id': s.userId,
+        'nome': s.nome,
+        'latitudine': s.latitudine,
+        'longitudine': s.longitudine,
+        'created_at': s.createdAt.toUtc().toIso8601String(),
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      });
+
+      await (update(spots)..where((t) => t.id.equals(s.id))).write(
+        const SpotsCompanion(
+          synced: Value(true),
+        ),
+      );
+    }
+  } catch (e) {
+    print("Errore sync pending spots: $e");
   }
+}
 
   Future<void> syncMissingWeather() async {
     try {
