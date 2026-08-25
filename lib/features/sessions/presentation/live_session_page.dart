@@ -2,13 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-
 import '../../../database/app_database.dart';
 import '../../../core/t.dart';
 import '../models/live_counter.dart';
 import '../../../database/session_event_type.dart';
 import 'package:vibration/vibration.dart';
-import 'package:flutter/services.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 class LiveSessionPage extends StatefulWidget {
@@ -41,6 +39,7 @@ class _LiveSessionPageState extends State<LiveSessionPage> {
   //
   // Il lancio attualmente in corso non viene inserito.
   final List<bool> castResults = [];
+  Map<int, String> counterNames = {};
 
   Duration lastCastTime = Duration.zero;
   Duration lastCatchTime = Duration.zero;
@@ -123,6 +122,193 @@ if (recoveryDuration != null) {
 
     return "$h:$m:$s";
   }
+
+Future<void> selectCounterName(int counterNumber) async {
+  final names = await widget.database.getUsedCounterNames();
+
+  if (!mounted) return;
+
+final selected = await showModalBottomSheet<String>(
+  context: context,
+  backgroundColor: Colors.black,
+  isScrollControlled: true,
+  builder: (sheetContext) {
+    return SafeArea(
+      child: SizedBox(
+        height: MediaQuery.of(sheetContext).size.height * 0.75,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 18,
+            vertical: 12,
+          ),
+          child: Column(
+            children: [
+              Text(
+                T.counterNumber(counterNumber),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+
+              const SizedBox(height: 8),
+
+              Expanded(
+                child: ListView(
+                  children: [
+                    if (names.isEmpty)
+                      const Padding(
+                        padding: EdgeInsets.all(20),
+                        child: Text(
+                          'Nessuna specie disponibile',
+                          style: TextStyle(
+                            color: Colors.white54,
+                          ),
+                        ),
+                      ),
+
+                    ...names.map(
+                      (name) => ListTile(
+                        title: Text(
+                          name.toUpperCase(),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                          ),
+                        ),
+                        onTap: () {
+                          Navigator.of(sheetContext).pop(name);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              const Divider(
+                color: Colors.white24,
+              ),
+
+              ListTile(
+                leading: const Icon(
+                  Icons.add,
+                  color: Colors.white,
+                ),
+                title: const Text(
+                  'AGGIUNGI SPECIE',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.of(sheetContext).pop('__ADD__');
+                },
+              ),
+
+              TextButton(
+                onPressed: () {
+                  Navigator.of(sheetContext).pop();
+                },
+                child: Text(T.cancel),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  },
+);
+
+  if (!mounted || selected == null) return;
+
+if (selected == '__ADD__') {
+  await Future<void>.delayed(
+    const Duration(milliseconds: 300),
+  );
+
+  if (!mounted) return;
+
+  await addCounterName(counterNumber);
+  return;
+}
+
+final counterNameId =
+    await widget.database.getOrCreateCounterName(selected);
+
+await widget.database.updateSessionCounterName(
+  widget.session.id,
+  counterNumber,
+  counterNameId,
+);
+
+if (!mounted) return;
+
+setState(() {
+  counterNames[counterNumber] = selected;
+});}
+
+Future<void> addCounterName(int counterNumber) async {
+  final controller = TextEditingController();
+
+  final name = await showDialog<String>(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return AlertDialog(
+        title: const Text(
+          'Aggiungi specie',
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textCapitalization: TextCapitalization.words,
+          decoration: const InputDecoration(
+            hintText: 'Nome specie',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+            },
+            child: Text(T.cancel),
+          ),
+          FilledButton(
+            onPressed: () {
+              final value = controller.text.trim();
+
+              if (value.isEmpty) return;
+
+              Navigator.of(dialogContext).pop(value);
+            },
+            child: const Text('SALVA'),
+          ),
+        ],
+      );
+    },
+  );
+
+  if (!mounted || name == null || name.isEmpty) {
+    return;
+  }
+
+  final counterNameId =
+      await widget.database.getOrCreateCounterName(name);
+
+  await widget.database.updateSessionCounterName(
+    widget.session.id,
+    counterNumber,
+    counterNameId,
+  );
+
+  if (!mounted) return;
+
+  setState(() {
+    counterNames[counterNumber] = name;
+  });
+}
 
 Future<void> selectRecovery() async {
   final result = await showModalBottomSheet<double?>(
@@ -303,50 +489,57 @@ setState(() {
   // CARICAMENTO SESSIONE
   // ------------------------------------------------------------
 
-  Future<void> loadLiveData() async {
-    final castCount = await widget.database.getCastCount(
-      widget.session.id,
-    );
+Future<void> loadLiveData() async {
+  final castCount = await widget.database.getCastCount(
+    widget.session.id,
+  );
 
-    final catchCounters = await widget.database.getCatchCounters(
-      widget.session.id,
-    );
+  final catchCounters = await widget.database.getCatchCounters(
+    widget.session.id,
+  );
 
-    final lastCast = await widget.database.getLastCastTime(
-      widget.session.id,
-    );
+  final lastCast = await widget.database.getLastCastTime(
+    widget.session.id,
+  );
 
-    final lastCatch = await widget.database.getLastCatchTime(
-      widget.session.id,
-    );
+  final lastCatch = await widget.database.getLastCatchTime(
+    widget.session.id,
+  );
 
-    await loadCastResults();
+  final counterNamesFromDb =
+      await widget.database.getSessionCounterNames(
+    widget.session.id,
+  );
 
-    if (!mounted) return;
+  await loadCastResults();
 
-    setState(() {
-      casts = castCount == 0 ? 1 : castCount;
+  if (!mounted) return;
 
-      counters.clear();
+  setState(() {
+    counterNames = counterNamesFromDb;
 
-      catchCounters.forEach((number, qty) {
-        counters.add(
-          LiveCounter(
-            counter: number,
-            quantity: qty,
-          ),
-        );
-      });
+    casts = castCount == 0 ? 1 : castCount;
 
-      lastCastTime = lastCast == null
-          ? Duration.zero
-          : DateTime.now().difference(lastCast);
+    counters.clear();
 
-      lastCatchTime = lastCatch == null
-          ? Duration.zero
-          : DateTime.now().difference(lastCatch);
+    catchCounters.forEach((number, qty) {
+      counters.add(
+        LiveCounter(
+          counter: number,
+          quantity: qty,
+        ),
+      );
     });
-  }
+
+    lastCastTime = lastCast == null
+        ? Duration.zero
+        : DateTime.now().difference(lastCast);
+
+    lastCatchTime = lastCatch == null
+        ? Duration.zero
+        : DateTime.now().difference(lastCatch);
+  });
+}
 
   // ------------------------------------------------------------
   // CALCOLO DEI 10 CERCHI
@@ -483,6 +676,7 @@ setState(() {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
+       resizeToAvoidBottomInset: false,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(
@@ -744,12 +938,15 @@ const SizedBox(height: 18),
               // CONTATORI
               // ------------------------------------------------
 
-              ...counters.map(
-                (c) => buildCounterRow(
-                  counterNumber: c.counter,
-                  quantity: c.quantity,
-                  onMinus: () async {
-                    if (c.quantity > 0) {
+...counters.map(
+(c) => buildCounterRow(
+  counterNumber: c.counter,
+  quantity: c.quantity,
+  species: counterNames[c.counter],
+onSpeciesTap: () async {
+  await selectCounterName(c.counter);
+},  onMinus: () async {
+                              if (c.quantity > 0) {
                       await widget.database.removeLastCatchEvent(
                         sessionId: widget.session.id,
                         counter: c.counter,
@@ -804,28 +1001,28 @@ const SizedBox(height: 18),
                       }
                     });
                   },
-                  onPlus: () async {
-                    await widget.database.addCatchEvent(
-                      sessionId: widget.session.id,
-                      counter: c.counter,
-                    );
+onPlus: () async {
+  await widget.database.addCatchEvent(
+    sessionId: widget.session.id,
+    counter: c.counter,
+    species: counterNames[c.counter],
+  );
 
-                    await widget.database.printSessionLog(
-                      widget.session.id,
-                    );
+  await widget.database.printSessionLog(
+    widget.session.id,
+  );
 
-                    await loadCastResults();
+  await loadCastResults();
 
-                    if (!mounted) return;
+  if (!mounted) return;
 
-                    setState(() {
-                      c.quantity++;
+  setState(() {
+    c.quantity++;
 
-                      lastCatchAt = DateTime.now();
-                      lastCatchTime = Duration.zero;
-                    });
-                  },
-                ),
+    lastCatchAt = DateTime.now();
+    lastCatchTime = Duration.zero;
+  });
+},                ),
               ),
 
               const SizedBox(height: 8),
@@ -884,28 +1081,40 @@ const SizedBox(height: 18),
   // RIGA CONTATORE
   // ------------------------------------------------------------
 
-  Widget buildCounterRow({
-    required int counterNumber,
-    required int quantity,
-    required VoidCallback onMinus,
-    required VoidCallback onPlus,
-  }) {
-    return Column(
+Widget buildCounterRow({
+  required int counterNumber,
+  required int quantity,
+  String? species,
+  required VoidCallback onSpeciesTap,
+  required VoidCallback onMinus,
+  required VoidCallback onPlus,
+}) {
+        return Column(
       children: [
         SizedBox(
           height: 58,
           child: Row(
             children: [
-              Expanded(
-                child: Text(
-                  T.counterNumber(counterNumber).toUpperCase(),
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                  ),
-                ),
-              ),
-              GestureDetector(
+Expanded(
+  child: GestureDetector(
+    onTap: onSpeciesTap,
+    behavior: HitTestBehavior.opaque,
+    child: Align(
+      alignment: Alignment.centerLeft,
+      child: Text(
+        species == null || species.isEmpty
+            ? T.counterNumber(counterNumber).toUpperCase()
+            : species.toUpperCase(),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+        ),
+      ),
+    ),
+  ),
+),              GestureDetector(
                 onTap: onMinus,
                 behavior: HitTestBehavior.opaque,
                 child: const SizedBox(

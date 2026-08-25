@@ -202,16 +202,18 @@ class AppDatabase extends _$AppDatabase {
     );
   }
 
-  Future<void> addCatchEvent({
-    required String sessionId,
-    required int counter,
-  }) async {
-    await addSessionEvent(
-      sessionId: sessionId,
-      eventType: SessionEventType.catchFish,
-      counter: counter,
-    );
-  }
+Future<void> addCatchEvent({
+  required String sessionId,
+  required int counter,
+  String? species,
+}) async {
+  await addSessionEvent(
+    sessionId: sessionId,
+    eventType: SessionEventType.catchFish,
+    counter: counter,
+    species: species,
+  );
+}
 
   Future<void> addCastEvent(
     String sessionId,
@@ -1226,19 +1228,31 @@ Future<void> syncPendingSpots() async {
     );
   }
 
-  Future<List<String>> getUsedSpecies() async {
-    final result = await customSelect(
-      '''
-    SELECT DISTINCT species
-    FROM session_catch
-    WHERE species IS NOT NULL
-      AND species <> ''
+Future<List<String>> getUsedSpecies() async {
+  final result = await customSelect(
+    '''
+    SELECT species
+    FROM (
+      SELECT DISTINCT species
+      FROM session_catch
+      WHERE species IS NOT NULL
+        AND species <> ''
+
+      UNION
+
+      SELECT DISTINCT species
+      FROM session_log
+      WHERE species IS NOT NULL
+        AND species <> ''
+    )
     ORDER BY species
     ''',
-    ).get();
+  ).get();
 
-    return result.map((row) => row.read<String>('species')).toList();
-  }
+  return result
+      .map((row) => row.read<String>('species'))
+      .toList();
+}
 
   Future<void> syncPendingSessionCatches() async {
     try {
@@ -1368,25 +1382,21 @@ Future<void> syncPendingSpots() async {
     return result?.counter ?? 0;
   }
 
-  Future<void> updateSessionCounterName(
-    String sessionId,
-    int counterNumber,
-    String counterNameId,
-  ) async {
-    await (update(sessionCounters)
-          ..where(
-            (t) =>
-                t.sessionId.equals(sessionId) &
-                t.counterNumber.equals(counterNumber),
-          ))
-        .write(
-      SessionCountersCompanion(
-        counterNameId: Value(counterNameId),
-        updatedAt: Value(DateTime.now().toUtc()),
-        synced: const Value(false),
-      ),
-    );
-  }
+Future<void> updateSessionCounterName(
+  String sessionId,
+  int counterNumber,
+  String counterNameId,
+) async {
+  await saveSessionCounter(
+    SessionCountersCompanion.insert(
+      sessionId: sessionId,
+      counterNumber: counterNumber,
+      counterNameId: counterNameId,
+      synced: const Value(false),
+      updatedAt: Value(DateTime.now().toUtc()),
+    ),
+  );
+}
 
   Future<void> saveSessionLog(
     SessionLogCompanion event,
@@ -1457,8 +1467,8 @@ Future<void> syncPendingSpots() async {
       });
 
       await (update(sessionLog)..where((t) => t.id.equals(e.id))).write(
-        SessionLogCompanion(
-          synced: const Value(true),
+        const SessionLogCompanion(
+          synced: Value(true),
         ),
       );
     }
@@ -1543,8 +1553,8 @@ Future<void> syncPendingSpots() async {
       });
 
       await (update(counterNames)..where((t) => t.id.equals(c.id))).write(
-        CounterNamesCompanion(
-          synced: const Value(true),
+        const CounterNamesCompanion(
+          synced: Value(true),
         ),
       );
     }
@@ -1622,8 +1632,8 @@ Future<void> syncPendingSpots() async {
                   t.counterNumber.equals(c.counterNumber),
             ))
           .write(
-        SessionCountersCompanion(
-          synced: const Value(true),
+        const SessionCountersCompanion(
+          synced: Value(true),
         ),
       );
     }

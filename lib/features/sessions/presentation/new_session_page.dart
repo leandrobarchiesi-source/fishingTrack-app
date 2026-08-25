@@ -19,7 +19,6 @@ import 'widgets/weather_section.dart';
 import 'widgets/datetime_section.dart';
 import 'widgets/notes_section.dart';
 import '../models/catch_row.dart';
-import 'widgets/catch_row_widget.dart';
 import 'widgets/catches_section.dart';
 import 'widgets/fishing_type_section.dart';
 import 'widgets/session_buttons.dart';

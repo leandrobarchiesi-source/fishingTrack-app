@@ -15,6 +15,8 @@ import 'features/settings/presentation/settings_page.dart';
 import 'services/sync_service.dart';
 import 'services/connectivity_service.dart';
 import 'features/sessions/presentation/new_session_page.dart';
+import 'core/session_constants.dart';
+import 'package:intl/intl.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -147,9 +149,31 @@ class _HomePageState extends State<HomePage> {
     setState(() {});
   }
 
-  Future<List<FishingSession>> loadSessions() async {
-    return database.getAllSessions();
-  }
+Future<List<FishingSession>> loadSessions() async {
+  final sessions = await database.getAllSessions();
+
+  sessions.sort((a, b) {
+    final dateA = DateTime(
+      a.data.year,
+      a.data.month,
+      a.data.day,
+      a.oraInizio.hour,
+      a.oraInizio.minute,
+    );
+
+    final dateB = DateTime(
+      b.data.year,
+      b.data.month,
+      b.data.day,
+      b.oraInizio.hour,
+      b.oraInizio.minute,
+    );
+
+    return dateB.compareTo(dateA);
+  });
+
+  return sessions;
+}
 
   Future<void> loadDashboardData() async {
     spotCount = await database.getSpotCount();
@@ -239,6 +263,14 @@ class _HomePageState extends State<HomePage> {
 
             final sessions = snapshot.data!;
 
+            debugPrint(
+  'LINGUA: ${Localizations.localeOf(context).languageCode}',);
+
+  final dateFormat =
+    AppSettings.language == 'en'
+        ? 'yyyy/MM/dd'
+        : 'dd/MM/yyyy';
+
             return ListView(
               padding: const EdgeInsets.all(
                 16,
@@ -273,17 +305,56 @@ class _HomePageState extends State<HomePage> {
                         contentPadding: const EdgeInsets.all(
                           16,
                         ),
-                        leading: const CircleAvatar(
-                          child: Icon(
-                            Icons.phishing,
-                          ),
-                        ),
-                        title: Text(
-                          session.luogo,
-                        ),
-                        subtitle:
-                            Text("${session.data.toString().split(" ")[0]}"
-                                "\n${T.sessionType(session.tipoPescata)}"),
+                        leading: CircleAvatar(
+child: Image.asset(
+  session.mode == SessionMode.live
+      ? 'assets/icons/session_live.png'
+      : 'assets/icons/session_standard.png',
+  width: 32,
+  height: 32,
+  fit: BoxFit.contain,
+),
+),
+
+title: Row(
+  children: [
+    Expanded(
+      child: Text(
+        session.luogo,
+      ),
+    ),
+    const SizedBox(width: 8),
+    Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 8,
+        vertical: 4,
+      ),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(8),
+        color: session.mode == SessionMode.live
+            ? Colors.orange.withValues(alpha: 0.15)
+            : Colors.blue.withValues(alpha: 0.15),
+      ),
+      child: Text(
+        session.mode == SessionMode.live
+            ? 'LIVE'
+            : 'STANDARD',
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.bold,
+          color: session.mode == SessionMode.live
+              ? Colors.orange
+              : Colors.blue,
+        ),
+      ),
+    ),
+  ],
+),
+
+subtitle: Text(
+  "${DateFormat(dateFormat).format(session.data)}"
+  "\n${T.sessionType(session.tipoPescata)}",
+),
                         onTap: () async {
                           final result = await Navigator.push(
                             context,
@@ -381,20 +452,30 @@ class _HomePageState extends State<HomePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _boxStat(
-                    Icons.phishing,
-                    sessions.length.toString(),
-                    T.sessions,
-                  ),
+_boxStat(
+  Image.asset(
+    'assets/icons/dashboard_sessions.png',
+    width: 38,
+    height: 38,
+  ),
+  sessions.length.toString(),
+  T.sessions,
+),
                   ValueListenableBuilder<bool>(
                     valueListenable: ConnectivityService.online,
                     builder: (context, online, _) {
-                      return _boxStat(
-                        Icons.circle,
-                        online ? T.online : T.offline,
-                        T.status,
-                        color: online ? Colors.green : Colors.red,
-                      );
+return _boxStat(
+  Image.asset(
+    online
+        ? 'assets/icons/dashboard_status.png'
+        : 'assets/icons/dashboard_status_offline.png',
+    width: 38,
+    height: 38,
+  ),
+  online ? T.online : T.offline,
+  T.status,
+  color: online ? Colors.green : Colors.red,
+);
                     },
                   ),
                   InkWell(
@@ -409,13 +490,17 @@ class _HomePageState extends State<HomePage> {
 
                       await refreshDashboard();
                     },
-                    child: _boxStat(
-                      Icons.place,
-                      spotCount.toString(),
-                      T.spots,
-                      open: true,
-                    ),
-                  ),
+child: _boxStat(
+  Image.asset(
+    'assets/icons/dashboard_spot.png',
+    width: 38,
+    height: 38,
+  ),
+  spotCount.toString(),
+  T.spots,
+  open: true,
+),
+),
                 ],
               ),
               const SizedBox(height: 8),
@@ -440,50 +525,53 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _boxStat(
-    IconData icon,
-    String value,
-    String label, {
-    Color color = const Color(0xFF0D47A1),
-    bool open = false,
-  }) {
-    return Column(
-      children: [
-        Icon(
-          icon,
-          size: 22,
+  Widget icon,
+  String value,
+  String label, {
+  Color color = const Color(0xFF0D47A1),
+  bool open = false,
+}) {
+  return Column(
+    children: [
+      SizedBox(
+        width: 42,
+        height: 42,
+        child: Center(
+          child: icon,
+        ),
+      ),
+      const SizedBox(
+        height: 6,
+      ),
+      Text(
+        value,
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.bold,
           color: color,
         ),
-        const SizedBox(
-          height: 6,
-        ),
-        Text(
-          value,
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: color,
-          ),
-        ),
-        Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              label,
-              style: const TextStyle(
-                color: Color(0xFF1565C0),
-              ),
+      ),
+      Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            label,
+            style: const TextStyle(
+              color: Color(0xFF1565C0),
             ),
-            if (open) ...[
-              const SizedBox(width: 3),
-              const Icon(
-                Icons.arrow_forward_ios,
-                size: 11,
-                color: Color(0xFF1565C0),
-              ),
-            ]
+          ),
+          if (open) ...[
+            const SizedBox(width: 3),
+            const Icon(
+              Icons.arrow_forward_ios,
+              size: 11,
+              color: Color(0xFF1565C0),
+            ),
           ],
-        ),
-      ],
-    );
-  }
+        ],
+      ),
+    ],
+  );
+}
+
 }

@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/t.dart';
 
 class AutocompleteField extends StatelessWidget {
   final TextEditingController controller;

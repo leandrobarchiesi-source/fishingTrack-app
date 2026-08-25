@@ -68,3 +68,9 @@ flutter:
     - assets/favicon.png
     - assets/splash_logo.png
     - assets/sounds/recovery_beep.wav
+    - assets/icons/session_standard.png
+    - assets/icons/session_live.png
+    - assets/icons/dashboard_sessions.png
+    - assets/icons/dashboard_status.png
+    - assets/icons/dashboard_status_offline.png
+    - assets/icons/dashboard_spot.png
